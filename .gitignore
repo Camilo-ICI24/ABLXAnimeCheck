@@ -1,0 +1,12 @@
+# entorno virtual
+discbot/
+venv/
+
+# token / secretos
+tokendiscord.txt
+tokengithub.txt
+.env
+
+# python
+__pycache__/
+*.pyc
