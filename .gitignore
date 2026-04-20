@@ -10,3 +10,6 @@ tokengithub.txt
 # python
 __pycache__/
 *.pyc
+
+# json
+animes_server.json
