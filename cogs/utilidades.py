@@ -1,4 +1,5 @@
 from discord.ext import commands
+import discord
 
 class Utilidades(commands.Cog):
     def __init__(self, bot):
@@ -35,6 +36,45 @@ class Utilidades(commands.Cog):
         await ctx.send(mensaje)
 
     @commands.command()
+    async def infobot(self, ctx):
+        embed = discord.Embed(
+            title="🤖 ABLX Anime Bot",
+            description=(
+                "Bot para gestionar animes en servidores de Discord.\n"
+                "Permite registrar, avanzar capítulos, votar y ver progreso en comunidad."
+            ),
+            color=0x00ffcc
+        )
+
+        embed.add_field(
+            name="📌 Qué hace",
+            value=(
+                "• Registrar animes por servidor\n"
+                "• Seguir capítulos en grupo\n"
+                "• Sistema de votación (1-5 ⭐)\n"
+                "• Ranking de popularidad\n"
+                "• Progreso por usuario"
+            ),
+            inline=False
+        )
+
+        embed.add_field(
+            name="🧪 Versión",
+            value="v2026-04-20 (beta)",
+            inline=True
+        )
+
+        embed.add_field(
+            name="📦 Repositorio",
+            value="[GitHub](https://github.com/Camilo-ICI24/ABLXAnimeCheck.git)",
+            inline=True
+        )
+
+        embed.set_footer(text="ABLX Anime Tracker • Beta version")
+
+        await ctx.send(embed=embed)
+
+    @commands.command()
     async def comandos(self, ctx):
         await ctx.send(
             "📜 **Comandos disponibles:**\n\n"
@@ -45,6 +85,10 @@ class Utilidades(commands.Cog):
             "📋 $lista\n" "📊 $votar Nombre\n"
             "🏆 $popular\n"
             "✏️ $renombrar \"Nombre actual\" \"Nombre nuevo\"\n"
+            "🏁 $end Nombre\n"
+            "⏳ $progreso Nombre\n"
+            "❓ $guia Comando\n"
+            "📦 $infobot\n"
             "💡 Prefijos: $"
         )
 
@@ -57,7 +101,8 @@ class Utilidades(commands.Cog):
                 "`$guia <comando>`\n\n"
                 "Ejemplo: `$guia startanime`\n\n"
                 "Comandos disponibles:\n"
-                "startanime, unirse, verinfo, avanzar, lista, votar, popular, renombrar"
+                "startanime, unirse, verinfo, avanzar, lista, votar, popular, renombrar, end, " \
+                "guia, progreso"
             )
 
         comando = comando.lower()
@@ -112,6 +157,16 @@ class Utilidades(commands.Cog):
             "→ Indica la finalización de la reacción de un anime.\n"
             "• Actualiza el estado del anime, señalando que cada participante lo ha visto "
             "enteramente.",
+
+            "guia":
+            "*Sintaxis:* `$guia \"Comando\"`\n"
+            "→ Muestra la información detallada sobre un comando en particular. \n"
+            "• Funcionalidad, parámetros esperados y el resultado final que se obtiene.",
+
+            "infobot":
+            "*Sintaxis:* `$guia \"Comando\"`\n"
+            "→ Entrega todos los datos relacionados con el desarrollo actual del bot. \n"
+            "• Link del repositorio, versión actual y desarrollador.",
 
             "progreso":
             "*Sintaxis:* `$progreso \"Nombre\"`\n"
