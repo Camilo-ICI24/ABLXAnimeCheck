@@ -5,6 +5,20 @@ class Utilidades(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @staticmethod
+    def normalizar(texto: str):
+        return texto.lower().strip()
+
+    @staticmethod
+    def buscar_anime(server_data, nombre):
+        nombre = Utilidades.normalizar(nombre)
+
+        for key in server_data.keys():
+            if Utilidades.normalizar(key) == nombre:
+                return key
+
+        return None
+    
     @commands.command()
     async def lista(self, ctx):
         from db import cargar, get_server_data
@@ -15,25 +29,32 @@ class Utilidades(commands.Cog):
         if not server_data:
             return await ctx.send("📭 No hay animes en emisión 😢")
 
-        mensaje = "📺 **Animes en emisión:**\n\n"
+        embed = discord.Embed(
+            title="📺 Animes en emisión",
+            description="Listado de animes activos en el servidor",
+            color=0x00ffcc
+        )
 
-        # ordenar por nombre
         for nombre, info in sorted(server_data.items()):
-            cap = info.get("capitulo", "?")
-            usuarios = info.get("usuarios", [])
+            cap = info.get("capitulo", 1)
+            usuarios = info.get("usuarios", {})
 
-            # menciones bonitas
-            menciones = ", ".join([f"<@{uid}>" for uid in usuarios])
+            # 🔧 normalizar SI o SI
+            if isinstance(usuarios, list):
+                usuarios = {uid: cap for uid in usuarios}
 
-            mensaje += f"🎬 **{nombre}**\n"
-            mensaje += f"   📖 Capítulo: {cap}\n"
+            # 👥 formato bonito
+            menciones = "\n".join(
+                [f"👤 <@{uid}> → Cap {c}" for uid, c in usuarios.items()]
+            ) if usuarios else "Nadie viendo aún"
 
-            if menciones:
-                mensaje += f"   👥 Viendo: {menciones}\n"
+            embed.add_field(
+                name=f"🎬 {nombre}",
+                value=f"📖 Capítulo: {cap}\n👥 Viendo:\n{menciones}",
+                inline=False
+            )
 
-            mensaje += "\n"
-
-        await ctx.send(mensaje)
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def infobot(self, ctx):
@@ -78,14 +99,16 @@ class Utilidades(commands.Cog):
     async def comandos(self, ctx):
         await ctx.send(
             "📜 **Comandos disponibles:**\n\n"
-            "🎬 $startanime \"Nombre\" @usuario\n"
+            "🎬 $startanime \"Nombre\" @sugeridor @usuario_n\n"
             "👥 $unirse Nombre\n"
             "🔍 $verinfo Nombre\n"
             "⏩ $avanzar <capitulo> Nombre\n"
-            "📋 $lista\n" "📊 $votar Nombre\n"
+            "📋 $lista\n"
+            "📊 $votar Nombre\n"
             "🏆 $popular\n"
             "✏️ $renombrar \"Nombre actual\" \"Nombre nuevo\"\n"
             "🏁 $end Nombre\n"
+            "❌ $eliminaranime \"Nombre\"\n"
             "⏳ $progreso Nombre\n"
             "❓ $guia Comando\n"
             "📦 $infobot\n"
@@ -101,77 +124,76 @@ class Utilidades(commands.Cog):
                 "`$guia <comando>`\n\n"
                 "Ejemplo: `$guia startanime`\n\n"
                 "Comandos disponibles:\n"
-                "startanime, unirse, verinfo, avanzar, lista, votar, popular, renombrar, end, " \
-                "guia, progreso"
+                "startanime, unirse, verinfo, avanzar, lista, votar, popular, renombrar, end, "
+                "guia, progreso, eliminaranime"
             )
 
         comando = comando.lower()
 
         guias = {
-
             "startanime":
-            "*Sintaxis:* `$startanime \"Nombre\" @usuario`\n"
+            "*Sintaxis:* $startanime \"Nombre\" @sugeridor @user1 @user2 @user_n\n"
             "→ Inicia un anime nuevo en el server para reaccionar.\n"
             "• El usuario mencionado es quien lo sugirió.\n"
             "• Comienza en capítulo 1 automáticamente.",
 
             "unirse":
-            "*Sintaxis:* `$unirse Nombre`\n"
+            "*Sintaxis:* $unirse Nombre\n"
             "→ Te unes a un anime que otras personas estén reaccionando.\n"
             "• Te agrega a la lista de personas que lo están viendo en ese momento.",
 
             "verinfo":
-            "*Sintaxis:* `$verinfo Nombre`\n"
+            "*Sintaxis:* $verinfo Nombre\n"
             "→ Muestra información del anime.\n"
             "• Capítulo actual\n"
             "• Usuarios que lo están viendo",
 
             "avanzar":
-            "*Sintaxis:* `$avanzar <capitulo> Nombre`\n"
+            "*Sintaxis:* $avanzar <capitulo> Nombre\n"
             "→ Actualiza el capítulo actual del anime.\n"
             "• Reemplaza el progreso anterior",
 
             "lista":
-            "*Sintaxis:* `$lista`\n"
+            "*Sintaxis:* $lista\n"
             "→ Muestra todos los animes que el servidor actual está reaccionando.\n"
             "• Incluye capítulo actual y usuarios que se encuentren en reacción.",
 
             "votar":
-            "*Sintaxis:* `$votar Nombre`\n"
+            "*Sintaxis:* $votar Nombre\n"
             "→ Crea una votación del anime para todos los miembros del servidor.\n"
             "• Usa reacciones del 1️⃣ al 5️⃣\n"
             "• El voto se actualiza automáticamente",
 
             "popular":
-            "*Sintaxis:* `$popular`\n"
+            "*Sintaxis:* $popular\n"
             "→ Muestra ranking de animes.\n"
             "• Basado en promedio de votaciones",
 
             "renombrar":
-            "*Sintaxis:* `$renombrar \"Actual\" \"Nuevo\"`\n"
+            "*Sintaxis:* $renombrar \"Actual\" \"Nuevo\"\n"
             "→ Cambia el nombre de un anime.\n"
             "• Mantiene toda la información existente",
 
             "end":
-            "*Sintaxis:* `$end \"Nombre\"`\n"
+            "*Sintaxis:* $end \"Nombre\"\n"
             "→ Indica la finalización de la reacción de un anime.\n"
-            "• Actualiza el estado del anime, señalando que cada participante lo ha visto "
-            "enteramente.",
-
-            "guia":
-            "*Sintaxis:* `$guia \"Comando\"`\n"
-            "→ Muestra la información detallada sobre un comando en particular. \n"
-            "• Funcionalidad, parámetros esperados y el resultado final que se obtiene.",
+            "• Actualiza el estado del anime, señalando que cada participante lo ha visto enteramente.",
 
             "infobot":
-            "*Sintaxis:* `$guia \"Comando\"`\n"
-            "→ Entrega todos los datos relacionados con el desarrollo actual del bot. \n"
+            "*Sintaxis:* $guia \"Comando\"\n"
+            "→ Entrega todos los datos relacionados con el desarrollo actual del bot.\n"
             "• Link del repositorio, versión actual y desarrollador.",
 
+            "eliminaranime":
+            "*Sintaxis:* $eliminaranime \"Nombre\"\n"
+            "→ Elimina completamente un anime del servidor.\n"
+            "• Borra progreso, usuarios y votos.\n"
+            "• No se puede recuperar.",
+
             "progreso":
-            "*Sintaxis:* `$progreso \"Nombre\"`\n"
-            "→ Muestra qué tan avanzados estan ciertos usuarios en un anime.\n"
-            "• Indica quienes están más adelante y más atrás en un anime en particular."
+            "*Sintaxis:* $progreso \"Nombre\"\n"
+            "→ Muestra qué tan avanzados están los usuarios en un anime.\n"
+            "• Indica quién va más adelantado o atrasado."
         }
 
         if comando not in guias:
