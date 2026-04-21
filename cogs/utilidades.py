@@ -1,5 +1,8 @@
 from discord.ext import commands
+from difflib import get_close_matches as gcm
 import discord
+import re
+import unicodedata as ucd
 
 class Utilidades(commands.Cog):
     def __init__(self, bot):
@@ -7,15 +10,48 @@ class Utilidades(commands.Cog):
 
     @staticmethod
     def normalizar(texto: str):
-        return texto.lower().strip()
+        texto = texto.lower().strip()
+
+        # quitar acentos
+        texto = ucd.normalize("NFKD", texto)
+        texto = "".join(c for c in texto if not ucd.combining(c))
+
+        # quitar símbolos raros (deja letras, números y espacios)
+        texto = re.sub(r"[^\w\s]", "", texto)
+
+        # espacios múltiples
+        texto = re.sub(r"\s+", " ", texto)
+
+        return texto
 
     @staticmethod
     def buscar_anime(server_data, nombre):
         nombre = Utilidades.normalizar(nombre)
 
-        for key in server_data.keys():
-            if Utilidades.normalizar(key) == nombre:
-                return key
+        candidatos = []
+        mapa = {}
+
+        # 1. construir lista de posibles nombres
+        for key, info in server_data.items():
+            key_norm = Utilidades.normalizar(key)
+
+            candidatos.append(key_norm)
+            mapa[key_norm] = key
+
+            for alias in info.get("aliases", []):
+                alias_norm = Utilidades.normalizar(alias)
+                candidatos.append(alias_norm)
+                mapa[alias_norm] = key
+
+        # 2. match exacto primero
+        if nombre in mapa:
+            return mapa[nombre]
+
+        # 3. fuzzy match (magia tipo Google)
+        matches = gcm(nombre, candidatos, n=1, cutoff=0.6)
+
+        if matches:
+            return mapa[matches[0]]
 
         return None
     

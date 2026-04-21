@@ -3,6 +3,7 @@ from discord.ext import commands
 from db import cargar, guardar, get_server_data
 import requests
 from cogs.utilidades import Utilidades as ut
+import asyncio
 
 
 class Votaciones(commands.Cog):
@@ -17,6 +18,9 @@ class Votaciones(commands.Cog):
         if user.bot:
             return
 
+        if not reaction.message.guild:
+            return
+
         emoji_map = {
             "1️⃣": 1,
             "2️⃣": 2,
@@ -25,42 +29,39 @@ class Votaciones(commands.Cog):
             "5️⃣": 5
         }
 
-        if str(reaction.emoji) not in emoji_map:
+        emoji = str(reaction.emoji)
+        if emoji not in emoji_map:
             return
 
         data = cargar()
+        guild_id = str(reaction.message.guild.id)
+        server_data = get_server_data(data, guild_id)
 
-        for guild_id in data:
-            server_data = data[guild_id]
+        # 🔍 encontrar anime
+        target = None
+        for anime, info in server_data.items():
+            if info.get("mensaje_votacion") == reaction.message.id:
+                target = info
+                break
 
-            for anime, info in server_data.items():
+        if not target:
+            return
 
-                if "mensaje_votacion" not in info:
-                    continue
+        if not target.get("votacion_activa", False):
+            return
 
-                if reaction.message.id != info["mensaje_votacion"]:
-                    continue
+        user_id = str(user.id)
+        votos = target.setdefault("votos", {})
 
-                user_id = str(user.id)
+        # ✅ guardar / actualizar voto
+        votos[user_id] = emoji_map[emoji]
+        guardar(data)
 
-                # 🔥 asegurar estructura correcta SIEMPRE
-                if "votos" not in info:
-                    info["votos"] = {}
-
-                votos = info["votos"]
-
-                # ❌ ya votó → no puede cambiar
-                if user_id in votos:
-                    await reaction.remove(user)
-                    return
-
-                voto = emoji_map[str(reaction.emoji)]
-                votos[user_id] = voto
-
-                guardar(data)
-
-                await reaction.remove(user)
-                return
+        # 🔥 FIX REAL: eliminar SOLO la reacción actual (sin loops raros)
+        try:
+            await reaction.message.remove_reaction(reaction.emoji, user)
+        except Exception as e:
+            print("Error al quitar reacción:", e)
 
     # =========================
     # 📊 VOTAR
@@ -71,25 +72,26 @@ class Votaciones(commands.Cog):
         server_data = get_server_data(data, str(ctx.guild.id))
 
         key = ut.buscar_anime(server_data, nombre)
-
         if not key:
             return await ctx.send("❌ No existe ese anime 😢")
 
         info = server_data[key]
 
-        # 🔍 imagen
+        # 🔍 imagen desde Jikan
         imagen = None
         try:
-            res = requests.get(f"https://api.jikan.moe/v4/anime?q={key}&limit=1")
-            anime = res.json()
-            if anime.get("data"):
-                imagen = anime["data"][0]["images"]["jpg"]["image_url"]
+            res = requests.get(
+                f"https://api.jikan.moe/v4/anime?q={key}&limit=1"
+            )
+            api = res.json().get("data", [])
+            if api:
+                imagen = api[0]["images"]["jpg"]["image_url"]
         except:
             pass
 
         embed = discord.Embed(
-            title=f"📊 {key}",
-            description="⭐ **Califica este anime!**",
+            title=f"📊 Votación: {key}",
+            description="⭐ Reacciona del 1️⃣ al 5️⃣\n⏱️ Tienes 2 minutos",
             color=0xffcc00
         )
 
@@ -101,15 +103,41 @@ class Votaciones(commands.Cog):
         for e in ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]:
             await msg.add_reaction(e)
 
+        # =========================
+        # 🧠 estado (NO BORRAR votos si ya existen)
+        # =========================
         info["mensaje_votacion"] = msg.id
 
         if "votos" not in info:
-            info["votos"] = {}
+            info["votos"] = {}  # solo si no existe
+
+        info["votacion_activa"] = True
+        guardar(data)
+
+        # =========================
+        # ⏱️ cierre automático
+        # =========================
+        await asyncio.sleep(120)
+
+        # 🔥 recargar datos actualizados (CLAVE)
+        data = cargar()
+        server_data = get_server_data(data, str(ctx.guild.id))
+
+        if key in server_data:
+            server_data[key]["votacion_activa"] = False
 
         guardar(data)
 
+        embed_end = discord.Embed(
+            title="⏳ Votación finalizada",
+            description=f"Se cerró la votación de **{key}**",
+            color=0xff4444
+        )
+
+        await ctx.send(embed=embed_end)
+
     # =========================
-    # 🏆 POPULAR (FIX DEFINITIVO)
+    # 🏆 POPULAR
     # =========================
     @commands.command()
     async def popular(self, ctx):
@@ -122,21 +150,17 @@ class Votaciones(commands.Cog):
 
             votos = info.get("votos", {})
 
-            total = 0
-            cantidad = 0
+            if not votos:
+                continue
 
-            # 🔥 normalizar formato híbrido
-            for estrella, usuarios in votos.items():
+            # 🔥 asegurar ints
+            votos_limpios = [int(v) for v in votos.values() if isinstance(v, int)]
 
-                # caso seguro: lista de usuarios por estrella
-                if isinstance(usuarios, list):
-                    total += int(estrella) * len(usuarios)
-                    cantidad += len(usuarios)
+            if not votos_limpios:
+                continue
 
-                # caso futuro (por si migras a dict limpio)
-                elif isinstance(usuarios, dict):
-                    total += int(estrella) * len(usuarios)
-                    cantidad += len(usuarios)
+            total = sum(votos_limpios)
+            cantidad = len(votos_limpios)
 
             promedio = total / cantidad if cantidad > 0 else 0
 
@@ -153,7 +177,7 @@ class Votaciones(commands.Cog):
         if not ranking:
             embed.add_field(
                 name="📭 Vacío",
-                value="No hay animes votados aún 😢",
+                value="No hay votos aún 😢",
                 inline=False
             )
             return await ctx.send(embed=embed)
