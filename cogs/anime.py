@@ -9,49 +9,42 @@ class Anime(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    async def startanime(self, ctx, *, args):
+    # =========================
+    # 🔧 HELPERS
+    # =========================
+    def _get_data(self, ctx):
         data = cargar()
         server_data = get_server_data(data, str(ctx.guild.id))
+        return data, server_data
 
+    def _validar_startanime(self, ctx, args):
         if '"' not in args:
-            return await ctx.send('⚠️ Usa: $startanime "Nombre" @usuario')
+            return '⚠️ Usa: $startanime "Nombre" @usuario'
 
-        usuarios = ctx.message.mentions
-        if not usuarios:
-            return await ctx.send('⚠️ Debes mencionar al menos un usuario')
+        if not ctx.message.mentions:
+            return '⚠️ Debes mencionar al menos un usuario'
 
-        nombre = args.split('"')[1].strip()
+        return None
 
-        if nombre in server_data:
-            return await ctx.send("❌ Ya existe")
+    def _extraer_nombre(self, args):
+        return args.split('"')[1].strip()
 
-        # =========================
-        # 🧠 FIX CLAVE: ordenar menciones según aparición en el mensaje
-        # =========================
+    def _ordenar_usuarios(self, ctx):
         contenido = ctx.message.content
-        usuarios_ordenados = sorted(
-            usuarios,
+        return sorted(
+            ctx.message.mentions,
             key=lambda u: contenido.index(f"<@{u.id}>")
             if f"<@{u.id}>" in contenido else 999999
         )
 
-        sugerido = usuarios_ordenados[0]
-        participantes = usuarios_ordenados[1:]
-
-        # =========================
-        # 🔥 API Jikan
-        # =========================
+    def _fetch_anime_data(self, nombre):
         imagen = None
         status = "desconocido"
         episodes = None
         aliases = set()
 
         try:
-            res = requests.get(
-                f"https://api.jikan.moe/v4/anime?q={nombre}&limit=1"
-            )
-
+            res = requests.get(f"https://api.jikan.moe/v4/anime?q={nombre}&limit=1")
             data_api = res.json().get("data", [])
 
             if data_api:
@@ -68,18 +61,15 @@ class Anime(commands.Cog):
                 for t in anime.get("titles", []):
                     if t.get("title"):
                         aliases.add(t["title"])
-
         except:
             aliases.add(nombre)
 
-        aliases = [a for a in aliases if a]
+        return imagen, status, episodes, [a for a in aliases if a]
 
-        # =========================
-        # 🧠 guardar
-        # =========================
+    def _guardar_anime(self, server_data, nombre, usuarios, sugerido, imagen, status, episodes, aliases):
         server_data[nombre] = {
             "capitulo": 1,
-            "usuarios": {str(u.id): 1 for u in usuarios_ordenados},
+            "usuarios": {str(u.id): 1 for u in usuarios},
             "sugerido_por": str(sugerido.id),
             "aliases": aliases,
             "status": status,
@@ -87,35 +77,71 @@ class Anime(commands.Cog):
             "image": imagen
         }
 
-        guardar(data)
-
-        # =========================
-        # 📦 EMBED
-        # =========================
+    def _crear_embed_startanime(self, nombre, sugerido, usuarios, status, episodes, imagen):
         embed = discord.Embed(
             title="🎬 Nuevo Anime Registrado",
             description=f"**{nombre}**",
             color=0x00ffcc
         )
 
-        embed.add_field(
-            name="👤 Sugerido por",
-            value=sugerido.mention,
-            inline=False
-        )
-
-        embed.add_field(
-            name="👥 Usuarios",
-            value=", ".join([u.mention for u in usuarios_ordenados]),
-            inline=False
-        )
-
+        embed.add_field(name="👤 Sugerido por", value=sugerido.mention, inline=False)
+        embed.add_field(name="👥 Usuarios", value=", ".join([u.mention for u in usuarios]), inline=False)
         embed.add_field(name="📖 Capítulo", value="1", inline=True)
         embed.add_field(name="📡 Estado", value=status, inline=True)
         embed.add_field(name="📺 Episodios", value=str(episodes) if episodes else "?", inline=True)
 
         if imagen:
             embed.set_image(url=imagen)
+
+        return embed
+
+    def _crear_embed_avance_individual(self, uid, capitulo, key):
+        return discord.Embed(
+            description=f"⏩ <@{uid}> avanzó al capítulo **{capitulo}** en **{key}**",
+            color=0x00ffcc
+        )
+
+    def _crear_embed_avance_multiple(self, capitulo, key, usuarios):
+        return discord.Embed(
+            description=(
+                f"⏩ Estos chicos han visto hasta el capítulo **{capitulo}** de **{key}**:\n"
+                + ", ".join(usuarios)
+            ),
+            color=0x00ffcc
+        )
+
+    # =========================
+    # 🎬 START ANIME
+    # =========================
+    @commands.command()
+    async def startanime(self, ctx, *, args):
+        data, server_data = self._get_data(ctx)
+
+        error = self._validar_startanime(ctx, args)
+        if error:
+            return await ctx.send(error)
+
+        nombre = self._extraer_nombre(args)
+
+        if nombre in server_data:
+            return await ctx.send("❌ Ya existe")
+
+        usuarios_ordenados = self._ordenar_usuarios(ctx)
+        sugerido = usuarios_ordenados[0]
+
+        imagen, status, episodes, aliases = self._fetch_anime_data(nombre)
+
+        self._guardar_anime(
+            server_data, nombre, usuarios_ordenados,
+            sugerido, imagen, status, episodes, aliases
+        )
+
+        guardar(data)
+
+        embed = self._crear_embed_startanime(
+            nombre, sugerido, usuarios_ordenados,
+            status, episodes, imagen
+        )
 
         await ctx.send(embed=embed)
 
@@ -124,8 +150,7 @@ class Anime(commands.Cog):
     # =========================
     @commands.command()
     async def unirse(self, ctx, *, nombre):
-        data = cargar()
-        server_data = get_server_data(data, str(ctx.guild.id))
+        data, server_data = self._get_data(ctx)
 
         key = ut.buscar_anime(server_data, nombre)
         if not key:
@@ -133,14 +158,11 @@ class Anime(commands.Cog):
 
         uid = str(ctx.author.id)
 
-        # 👇 asegurar estructura correcta
         if "usuarios" not in server_data[key]:
             server_data[key]["usuarios"] = {}
 
-        # 👇 SOLO agrega a este anime (no toca otros)
         if uid not in server_data[key]["usuarios"]:
             server_data[key]["usuarios"][uid] = 1
-
             guardar(data)
 
             embed = discord.Embed(
@@ -155,8 +177,7 @@ class Anime(commands.Cog):
     # =========================
     @commands.command()
     async def verinfo(self, ctx, *, nombre):
-        data = cargar()
-        server_data = get_server_data(data, str(ctx.guild.id))
+        data, server_data = self._get_data(ctx)
 
         key = ut.buscar_anime(server_data, nombre)
         if not key:
@@ -168,52 +189,77 @@ class Anime(commands.Cog):
         if not usuarios:
             return await ctx.send("❌ Nadie está viendo este anime 😢")
 
-        imagen = None
-        try:
-            res = requests.get(f"https://api.jikan.moe/v4/anime?q={key}&limit=1")
-            anime = res.json()
-            if anime.get("data"):
-                imagen = anime["data"][0]["images"]["jpg"]["image_url"]
-        except:
-            pass
-
         embed = discord.Embed(
             title=f"📺 {key}",
             description="📊 Estado actual del anime en el servidor",
             color=0x00ffcc
         )
 
-        embed.add_field(
-            name="👤 Sugerido por",
-            value=f"<@{info.get('sugerido_por')}>",
-            inline=False
-        )
+        embed.add_field(name="👤 Sugerido por", value=f"<@{info.get('sugerido_por')}>", inline=False)
 
         progreso = "\n".join(
             [f"👤 <@{uid}> → Cap {cap}" for uid, cap in usuarios.items()]
         )
 
-        embed.add_field(
-            name="📖 Progreso de usuarios",
-            value=progreso,
-            inline=False
+        embed.add_field(name="📖 Progreso de usuarios", value=progreso, inline=False)
+        embed.add_field(name="👥 Viendo", value=str(len(usuarios)), inline=True)
+        embed.add_field(name="📌 Capítulo base", value=str(info.get("capitulo", 1)), inline=True)
+
+        if info.get("image"):
+            embed.set_image(url=info["image"])
+
+        await ctx.send(embed=embed)
+
+    # =========================
+    # ⏩ AVANZAR (NUEVO)
+    # =========================
+    @commands.command()
+    async def avanzar(self, ctx, capitulo: int, *, args):
+        data, server_data = self._get_data(ctx)
+
+        usuarios_mencionados = ctx.message.mentions
+        autor_id = str(ctx.author.id)
+
+        nombre = " ".join(
+            [p for p in args.split() if not p.startswith("<@")]
         )
 
-        embed.add_field(
-            name="👥 Viendo",
-            value=str(len(usuarios)),
-            inline=True
-        )
+        key = ut.buscar_anime(server_data, nombre)
 
-        embed.add_field(
-            name="📌 Capítulo base",
-            value=str(info.get("capitulo", 1)),
-            inline=True
-        )
+        if not key:
+            return await ctx.send("❌ No existe ese anime 😢")
 
-        if imagen:
-            embed.set_image(url=imagen)
+        usuarios = server_data[key].get("usuarios", {})
 
+        # CASO 1 y 2
+        if not usuarios_mencionados or (
+            len(usuarios_mencionados) == 1 and str(usuarios_mencionados[0].id) == autor_id
+        ):
+            if autor_id not in usuarios:
+                return await ctx.send("❌ No estás en ese anime 😢")
+
+            usuarios[autor_id] = capitulo
+            guardar(data)
+
+            embed = self._crear_embed_avance_individual(autor_id, capitulo, key)
+            return await ctx.send(embed=embed)
+
+        # CASO 3
+        actualizados = []
+
+        for u in usuarios_mencionados:
+            uid = str(u.id)
+
+            if uid in usuarios:
+                usuarios[uid] = capitulo
+                actualizados.append(f"<@{uid}>")
+
+        if not actualizados:
+            return await ctx.send("❌ Ninguno de los usuarios está en ese anime 😢")
+
+        guardar(data)
+
+        embed = self._crear_embed_avance_multiple(capitulo, key, actualizados)
         await ctx.send(embed=embed)
 
     # =========================
@@ -221,8 +267,7 @@ class Anime(commands.Cog):
     # =========================
     @commands.command()
     async def renombrar(self, ctx, *, args):
-        data = cargar()
-        server_data = get_server_data(data, str(ctx.guild.id))
+        data, server_data = self._get_data(ctx)
 
         if args.count('"') < 4:
             return await ctx.send('⚠️ Usa: $renombrar "Actual" "Nuevo"')
@@ -244,124 +289,12 @@ class Anime(commands.Cog):
 
         await ctx.send(f"{actual} → {nuevo}")
 
-    @commands.command()
-    async def avanzar(self, ctx, capitulo: int, *, nombre):
-        data = cargar()
-        server_data = get_server_data(data, str(ctx.guild.id))
-
-        uid = str(ctx.author.id)
-
-        # 🔍 buscar anime por nombre (usa tu sistema fuzzy)
-        key = ut.buscar_anime(server_data, nombre)
-
-        if not key:
-            return await ctx.send("❌ No existe ese anime 😢")
-
-        usuarios = server_data[key].get("usuarios", {})
-
-        if uid not in usuarios:
-            return await ctx.send("❌ No estás en ese anime 😢")
-
-        usuarios[uid] = capitulo
-        guardar(data)
-
-        await ctx.send(
-            f"⏩ <@{uid}> avanzó al capítulo **{capitulo}** en **{key}**"
-        )
-
-    # =========================
-    # 🏁 END
-    # =========================
-    @commands.command()
-    async def end(self, ctx, *, nombre):
-        data = cargar()
-        server_data = get_server_data(data, str(ctx.guild.id))
-
-        key = ut.buscar_anime(server_data, nombre)
-        if not key:
-            return await ctx.send("❌ Ese anime no existe 😢")
-
-        server_data[key]["terminado"] = True
-        guardar(data)
-
-        await ctx.send(f"🏁 **Reacción de {key} finalizado completamente!! 🎉**")
-
-    # =========================
-    # 📊 PROGRESO
-    # =========================
-    @commands.command()
-    async def progreso(self, ctx, *, nombre):
-        data = cargar()
-        server_data = get_server_data(data, str(ctx.guild.id))
-
-        key = ut.buscar_anime(server_data, nombre)
-
-        if not key:
-            return await ctx.send("❌ Ese anime no existe 😢")
-
-        info = server_data[key]
-        usuarios = info.get("usuarios", {})
-
-        if isinstance(usuarios, list):
-            usuarios = {
-                uid: info.get("capitulo", 1) for uid in usuarios
-            }
-
-        if not usuarios:
-            return await ctx.send("❌ Nadie está viendo este anime 😢")
-
-        # 🔢 ordenar progreso
-        ordenados = sorted(usuarios.items(), key=lambda x: x[1])
-
-        mas_atras_uid, mas_atras_cap = ordenados[0]
-        mas_adelante_uid, mas_adelante_cap = ordenados[-1]
-
-        sugeridor = info.get("sugerido_por", None)
-
-        embed = discord.Embed(
-            title=f"📊 Progreso de {key}",
-            color=0x00ffcc
-        )
-
-        embed.add_field(
-            name="👤 Sugerido por",
-            value=f"<@{sugeridor}>" if sugeridor else "Desconocido",
-            inline=False
-        )
-
-        progreso_txt = "\n".join(
-            [f"👤 <@{uid}> → Cap {cap}" for uid, cap in ordenados]
-        )
-
-        embed.add_field(
-            name="📖 Progreso de usuarios",
-            value=progreso_txt,
-            inline=False
-        )
-
-        embed.add_field(
-            name="🏆 Más adelantado",
-            value=f"<@{mas_adelante_uid}> → Cap {mas_adelante_cap}",
-            inline=True
-        )
-
-        embed.add_field(
-            name="🐢 Más atrasado",
-            value=f"<@{mas_atras_uid}> → Cap {mas_atras_cap}",
-            inline=True
-        )
-
-        embed.set_footer(text="Sistema de progreso ABLX Anime")
-
-        await ctx.send(embed=embed)
-
     # =========================
     # 🧨 ELIMINAR ANIME
     # =========================
     @commands.command()
     async def eliminaranime(self, ctx, *, nombre):
-        data = cargar()
-        server_data = get_server_data(data, str(ctx.guild.id))
+        data, server_data = self._get_data(ctx)
 
         key = ut.buscar_anime(server_data, nombre)
         if not key:
@@ -384,6 +317,7 @@ class Anime(commands.Cog):
         guardar(data)
 
         await ctx.send(f"🧨 El anime **{key}** ha sido eliminado")
+
 
 async def setup(bot):
     await bot.add_cog(Anime(bot))

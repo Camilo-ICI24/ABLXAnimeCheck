@@ -3,9 +3,82 @@ import os
 
 DB_FILE = "animes_server.json"
 
+# =========================
+# 👥 USUARIOS
+# =========================
+def limpiar_usuarios(info):
+    usuarios = info.get("usuarios", {})
+
+    if isinstance(usuarios, list):
+        return {
+            str(uid): info.get("capitulo", 1)
+            for uid in usuarios
+        }
+
+    if isinstance(usuarios, dict):
+        return {
+            str(uid): int(cap) if isinstance(cap, int) else 1
+            for uid, cap in usuarios.items()
+        }
+
+    return {}
+
 
 # =========================
-# 🔥 MIGRACIÓN SEGURA
+# 📊 VOTOS
+# =========================
+def limpiar_votos(info):
+    votos = info.get("votos", {})
+    new_votes = {}
+
+    if isinstance(votos, dict):
+        for k, v in votos.items():
+
+            # formato viejo: {"5": [user1, user2]}
+            if isinstance(v, list):
+                try:
+                    score = int(k)
+                except:
+                    continue
+
+                for uid in v:
+                    new_votes[str(uid)] = score
+
+            # formato nuevo: {"user_id": 5}
+            elif isinstance(v, int):
+                new_votes[str(k)] = v
+
+    return new_votes
+
+
+# =========================
+# 🔒 CAMPOS CRÍTICOS
+# =========================
+def asegurar_campos(info):
+    if "votacion_activa" not in info:
+        info["votacion_activa"] = False
+
+    if "mensaje_votacion" not in info:
+        info["mensaje_votacion"] = None
+
+
+# =========================
+# 🎬 MIGRAR ANIME
+# =========================
+def migrar_anime(server_data):
+    for anime, info in list(server_data.items()):
+
+        if not isinstance(info, dict):
+            del server_data[anime]
+            continue
+
+        info["usuarios"] = limpiar_usuarios(info)
+        info["votos"] = limpiar_votos(info)
+        asegurar_campos(info)
+
+
+# =========================
+# 🔥 MIGRACIÓN GLOBAL
 # =========================
 def migrar(data):
     if not isinstance(data, dict):
@@ -17,72 +90,7 @@ def migrar(data):
             data[guild_id] = {}
             continue
 
-        for anime, info in list(server_data.items()):
-
-            if not isinstance(info, dict):
-                del server_data[anime]
-                continue
-
-            # =========================
-            # 👥 USUARIOS
-            # =========================
-            usuarios = info.get("usuarios", {})
-
-            if isinstance(usuarios, list):
-                info["usuarios"] = {
-                    str(uid): info.get("capitulo", 1)
-                    for uid in usuarios
-                }
-
-            elif not isinstance(usuarios, dict):
-                info["usuarios"] = {}
-
-            else:
-                # 🔥 asegurar keys string
-                info["usuarios"] = {
-                    str(uid): int(cap) if isinstance(cap, int) else 1
-                    for uid, cap in usuarios.items()
-                }
-
-            # =========================
-            # 📊 VOTOS (FIX DEFINITIVO)
-            # =========================
-            votos = info.get("votos", {})
-            new_votes = {}
-
-            if isinstance(votos, dict):
-
-                for k, v in votos.items():
-
-                    # 🧠 FORMATO VIEJO: {"5": [user1, user2]}
-                    if isinstance(v, list):
-                        try:
-                            score = int(k)
-                        except:
-                            continue
-
-                        for uid in v:
-                            new_votes[str(uid)] = score
-
-                    # 🧠 FORMATO NUEVO: {"user_id": 5}
-                    elif isinstance(v, int):
-                        new_votes[str(k)] = v
-
-                    # ❌ ignorar basura
-                    else:
-                        continue
-
-            # 🔥 SIEMPRE asegurar dict limpio
-            info["votos"] = new_votes
-
-            # =========================
-            # 🔒 CAMPOS CRÍTICOS
-            # =========================
-            if "votacion_activa" not in info:
-                info["votacion_activa"] = False
-
-            if "mensaje_votacion" not in info:
-                info["mensaje_votacion"] = None
+        migrar_anime(server_data)
 
     return data
 
@@ -100,7 +108,7 @@ def cargar():
 
         data = migrar(data)
 
-        # 🔥 GUARDAR automáticamente después de limpiar
+        # 🔥 guardar versión limpia automáticamente
         guardar(data)
 
         return data

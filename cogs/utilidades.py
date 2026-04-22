@@ -4,34 +4,55 @@ import discord
 import re
 import unicodedata as ucd
 
+
 class Utilidades(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # =========================
+    # 🔧 NORMALIZACIÓN
+    # =========================
     @staticmethod
     def normalizar(texto: str):
         texto = texto.lower().strip()
-
-        # quitar acentos
-        texto = ucd.normalize("NFKD", texto)
-        texto = "".join(c for c in texto if not ucd.combining(c))
-
-        # quitar símbolos raros (deja letras, números y espacios)
-        texto = re.sub(r"[^\w\s]", "", texto)
-
-        # espacios múltiples
-        texto = re.sub(r"\s+", " ", texto)
-
+        texto = Utilidades._quitar_acentos(texto)
+        texto = Utilidades._limpiar_simbolos(texto)
+        texto = Utilidades._limpiar_espacios(texto)
         return texto
 
+    @staticmethod
+    def _quitar_acentos(texto):
+        texto = ucd.normalize("NFKD", texto)
+        return "".join(c for c in texto if not ucd.combining(c))
+
+    @staticmethod
+    def _limpiar_simbolos(texto):
+        return re.sub(r"[^\w\s]", "", texto)
+
+    @staticmethod
+    def _limpiar_espacios(texto):
+        return re.sub(r"\s+", " ", texto)
+
+    # =========================
+    # 🔍 BÚSQUEDA
+    # =========================
     @staticmethod
     def buscar_anime(server_data, nombre):
         nombre = Utilidades.normalizar(nombre)
 
+        candidatos, mapa = Utilidades._construir_candidatos(server_data)
+
+        if nombre in mapa:
+            return mapa[nombre]
+
+        match = Utilidades._fuzzy_match(nombre, candidatos)
+        return mapa.get(match) if match else None
+
+    @staticmethod
+    def _construir_candidatos(server_data):
         candidatos = []
         mapa = {}
 
-        # 1. construir lista de posibles nombres
         for key, info in server_data.items():
             key_norm = Utilidades.normalizar(key)
 
@@ -43,28 +64,33 @@ class Utilidades(commands.Cog):
                 candidatos.append(alias_norm)
                 mapa[alias_norm] = key
 
-        # 2. match exacto primero
-        if nombre in mapa:
-            return mapa[nombre]
+        return candidatos, mapa
 
-        # 3. fuzzy match (magia tipo Google)
+    @staticmethod
+    def _fuzzy_match(nombre, candidatos):
         matches = gcm(nombre, candidatos, n=1, cutoff=0.6)
+        return matches[0] if matches else None
 
-        if matches:
-            return mapa[matches[0]]
-
-        return None
-    
+    # =========================
+    # 📋 LISTA
+    # =========================
     @commands.command()
     async def lista(self, ctx):
-        from db import cargar, get_server_data
-
-        data = cargar()
-        server_data = get_server_data(data, str(ctx.guild.id))
+        data, server_data = self._get_data(ctx)
 
         if not server_data:
             return await ctx.send("📭 No hay animes en emisión 😢")
 
+        embed = self._crear_embed_lista(server_data)
+        await ctx.send(embed=embed)
+
+    def _get_data(self, ctx):
+        from db import cargar, get_server_data
+        data = cargar()
+        server_data = get_server_data(data, str(ctx.guild.id))
+        return data, server_data
+
+    def _crear_embed_lista(self, server_data):
         embed = discord.Embed(
             title="📺 Animes en emisión",
             description="Listado de animes activos en el servidor",
@@ -72,28 +98,43 @@ class Utilidades(commands.Cog):
         )
 
         for nombre, info in sorted(server_data.items()):
-            cap = info.get("capitulo", 1)
-            usuarios = info.get("usuarios", {})
-
-            # 🔧 normalizar SI o SI
-            if isinstance(usuarios, list):
-                usuarios = {uid: cap for uid in usuarios}
-
-            # 👥 formato bonito
-            menciones = "\n".join(
-                [f"👤 <@{uid}> → Cap {c}" for uid, c in usuarios.items()]
-            ) if usuarios else "Nadie viendo aún"
-
             embed.add_field(
                 name=f"🎬 {nombre}",
-                value=f"📖 Capítulo: {cap}\n👥 Viendo:\n{menciones}",
+                value=self._formatear_anime_lista(info),
                 inline=False
             )
 
-        await ctx.send(embed=embed)
+        return embed
 
+    def _formatear_anime_lista(self, info):
+        cap = info.get("capitulo", 1)
+        usuarios = self._normalizar_usuarios(info.get("usuarios", {}), cap)
+        menciones = self._formatear_menciones(usuarios)
+
+        return f"📖 Capítulo: {cap}\n👥 Viendo:\n{menciones}"
+
+    def _normalizar_usuarios(self, usuarios, cap):
+        if isinstance(usuarios, list):
+            return {uid: cap for uid in usuarios}
+        return usuarios
+
+    def _formatear_menciones(self, usuarios):
+        if not usuarios:
+            return "Nadie viendo aún"
+
+        return "\n".join(
+            [f"👤 <@{uid}> → Cap {c}" for uid, c in usuarios.items()]
+        )
+
+    # =========================
+    # 🤖 INFO BOT
+    # =========================
     @commands.command()
     async def infobot(self, ctx):
+        embed = self._crear_embed_infobot()
+        await ctx.send(embed=embed)
+
+    def _crear_embed_infobot(self):
         embed = discord.Embed(
             title="🤖 ABLX Anime Bot",
             description=(
@@ -115,11 +156,7 @@ class Utilidades(commands.Cog):
             inline=False
         )
 
-        embed.add_field(
-            name="🧪 Versión",
-            value="v2026-04-20 (beta)",
-            inline=True
-        )
+        embed.add_field(name="🧪 Versión", value="v2026-04-20 (beta)", inline=True)
 
         embed.add_field(
             name="📦 Repositorio",
@@ -129,11 +166,17 @@ class Utilidades(commands.Cog):
 
         embed.set_footer(text="ABLX Anime Tracker • Beta version")
 
-        await ctx.send(embed=embed)
+        return embed
 
+    # =========================
+    # 📜 COMANDOS
+    # =========================
     @commands.command()
     async def comandos(self, ctx):
-        await ctx.send(
+        await ctx.send(self._texto_comandos())
+
+    def _texto_comandos(self):
+        return (
             "📜 **Comandos disponibles:**\n\n"
             "🎬 $startanime \"Nombre\" @sugeridor @usuario_n\n"
             "👥 $unirse Nombre\n"
@@ -151,22 +194,35 @@ class Utilidades(commands.Cog):
             "💡 Prefijos: $"
         )
 
+    # =========================
+    # 📘 GUIA
+    # =========================
     @commands.command()
     async def guia(self, ctx, comando=None):
 
         if not comando:
-            return await ctx.send(
-                "📘 Usa el comando así:\n"
-                "`$guia <comando>`\n\n"
-                "Ejemplo: `$guia startanime`\n\n"
-                "Comandos disponibles:\n"
-                "startanime, unirse, verinfo, avanzar, lista, votar, popular, renombrar, end, "
-                "guia, progreso, eliminaranime"
-            )
+            return await ctx.send(self._guia_general())
 
         comando = comando.lower()
+        guias = self._obtener_guias()
 
-        guias = {
+        if comando not in guias:
+            return await ctx.send("❌ Este comando no existe")
+
+        await ctx.send(f"📘 **{comando}**\n\n{guias[comando]}")
+
+    def _guia_general(self):
+        return (
+            "📘 Usa el comando así:\n"
+            "`$guia <comando>`\n\n"
+            "Ejemplo: `$guia startanime`\n\n"
+            "Comandos disponibles:\n"
+            "startanime, unirse, verinfo, avanzar, lista, votar, popular, renombrar, end, "
+            "guia, progreso, eliminaranime"
+        )
+
+    def _obtener_guias(self):
+        return {
             "startanime":
             "*Sintaxis:* $startanime \"Nombre\" @sugeridor @user1 @user2 @user_n\n"
             "→ Inicia un anime nuevo en el server para reaccionar.\n"
@@ -232,10 +288,6 @@ class Utilidades(commands.Cog):
             "• Indica quién va más adelantado o atrasado."
         }
 
-        if comando not in guias:
-            return await ctx.send("❌ Este comando no existe")
-
-        await ctx.send(f"📘 **{comando}**\n\n{guias[comando]}")
 
 async def setup(bot):
     await bot.add_cog(Utilidades(bot))

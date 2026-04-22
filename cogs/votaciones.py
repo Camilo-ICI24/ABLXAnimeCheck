@@ -11,17 +11,10 @@ class Votaciones(commands.Cog):
         self.bot = bot
 
     # =========================
-    # 🎯 REACCIONES
+    # 🔧 HELPERS
     # =========================
-    @commands.Cog.listener()
-    async def on_reaction_add(self, reaction, user):
-        if user.bot:
-            return
-
-        if not reaction.message.guild:
-            return
-
-        emoji_map = {
+    def _emoji_map(self):
+        return {
             "1️⃣": 1,
             "2️⃣": 2,
             "3️⃣": 3,
@@ -29,97 +22,49 @@ class Votaciones(commands.Cog):
             "5️⃣": 5
         }
 
-        emoji = str(reaction.emoji)
-        if emoji not in emoji_map:
-            return
-
-        data = cargar()
-        guild_id = str(reaction.message.guild.id)
-        server_data = get_server_data(data, guild_id)
-
-        # 🔍 encontrar anime
-        target = None
+    def _buscar_votacion(self, server_data, message_id):
         for anime, info in server_data.items():
-            if info.get("mensaje_votacion") == reaction.message.id:
-                target = info
-                break
+            if info.get("mensaje_votacion") == message_id:
+                return anime, info
+        return None, None
 
-        if not target:
-            return
+    def _guardar_voto(self, info, user_id, score):
+        votos = info.setdefault("votos", {})
+        votos[user_id] = score
 
-        if not target.get("votacion_activa", False):
-            return
-
-        user_id = str(user.id)
-        votos = target.setdefault("votos", {})
-
-        # ✅ guardar / actualizar voto
-        votos[user_id] = emoji_map[emoji]
-        guardar(data)
-
-        # 🔥 FIX REAL: eliminar SOLO la reacción actual (sin loops raros)
+    async def _quitar_reaccion(self, reaction, user):
         try:
             await reaction.message.remove_reaction(reaction.emoji, user)
         except Exception as e:
             print("Error al quitar reacción:", e)
 
-    # =========================
-    # 📊 VOTAR
-    # =========================
-    @commands.command()
-    async def votar(self, ctx, *, nombre):
-        data = cargar()
-        server_data = get_server_data(data, str(ctx.guild.id))
-
-        key = ut.buscar_anime(server_data, nombre)
-        if not key:
-            return await ctx.send("❌ No existe ese anime 😢")
-
-        info = server_data[key]
-
-        # 🔍 imagen desde Jikan
-        imagen = None
+    def _obtener_imagen(self, nombre):
         try:
             res = requests.get(
-                f"https://api.jikan.moe/v4/anime?q={key}&limit=1"
+                f"https://api.jikan.moe/v4/anime?q={nombre}&limit=1"
             )
             api = res.json().get("data", [])
             if api:
-                imagen = api[0]["images"]["jpg"]["image_url"]
+                return api[0]["images"]["jpg"]["image_url"]
         except:
             pass
+        return None
 
+    def _crear_embed_votacion(self, nombre, imagen):
         embed = discord.Embed(
-            title=f"📊 Votación: {key}",
+            title=f"📊 Votación: {nombre}",
             description="⭐ Reacciona del 1️⃣ al 5️⃣\n⏱️ Tienes 2 minutos",
             color=0xffcc00
         )
-
         if imagen:
             embed.set_image(url=imagen)
+        return embed
 
-        msg = await ctx.send(embed=embed)
-
+    async def _agregar_reacciones(self, msg):
         for e in ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]:
             await msg.add_reaction(e)
 
-        # =========================
-        # 🧠 estado (NO BORRAR votos si ya existen)
-        # =========================
-        info["mensaje_votacion"] = msg.id
-
-        if "votos" not in info:
-            info["votos"] = {}  # solo si no existe
-
-        info["votacion_activa"] = True
-        guardar(data)
-
-        # =========================
-        # ⏱️ cierre automático
-        # =========================
-        await asyncio.sleep(120)
-
-        # 🔥 recargar datos actualizados (CLAVE)
+    async def _cerrar_votacion(self, ctx, key):
         data = cargar()
         server_data = get_server_data(data, str(ctx.guild.id))
 
@@ -136,26 +81,16 @@ class Votaciones(commands.Cog):
 
         await ctx.send(embed=embed_end)
 
-    # =========================
-    # 🏆 POPULAR
-    # =========================
-    @commands.command()
-    async def popular(self, ctx):
-        data = cargar()
-        server_data = get_server_data(data, str(ctx.guild.id))
-
+    def _calcular_ranking(self, server_data):
         ranking = []
 
         for nombre, info in server_data.items():
-
             votos = info.get("votos", {})
 
             if not votos:
                 continue
 
-            # 🔥 asegurar ints
             votos_limpios = [int(v) for v in votos.values() if isinstance(v, int)]
-
             if not votos_limpios:
                 continue
 
@@ -166,8 +101,9 @@ class Votaciones(commands.Cog):
 
             ranking.append((nombre, promedio, info.get("sugerido_por")))
 
-        ranking.sort(key=lambda x: x[1], reverse=True)
+        return sorted(ranking, key=lambda x: x[1], reverse=True)
 
+    def _crear_embed_ranking(self, ranking):
         embed = discord.Embed(
             title="🏆 Ranking de Animes",
             description="Ordenado por calificación promedio",
@@ -180,10 +116,9 @@ class Votaciones(commands.Cog):
                 value="No hay votos aún 😢",
                 inline=False
             )
-            return await ctx.send(embed=embed)
+            return embed
 
         for i, (nombre, promedio, sugeridor) in enumerate(ranking, start=1):
-
             embed.add_field(
                 name=f"{i}. 🎬 {nombre}",
                 value=(
@@ -192,6 +127,81 @@ class Votaciones(commands.Cog):
                 ),
                 inline=False
             )
+
+        return embed
+
+    # =========================
+    # 🎯 REACCIONES
+    # =========================
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        if user.bot or not reaction.message.guild:
+            return
+
+        emoji_map = self._emoji_map()
+        emoji = str(reaction.emoji)
+
+        if emoji not in emoji_map:
+            return
+
+        data = cargar()
+        guild_id = str(reaction.message.guild.id)
+        server_data = get_server_data(data, guild_id)
+
+        _, target = self._buscar_votacion(server_data, reaction.message.id)
+
+        if not target or not target.get("votacion_activa", False):
+            return
+
+        user_id = str(user.id)
+
+        self._guardar_voto(target, user_id, emoji_map[emoji])
+        guardar(data)
+
+        await self._quitar_reaccion(reaction, user)
+
+    # =========================
+    # 📊 VOTAR
+    # =========================
+    @commands.command()
+    async def votar(self, ctx, *, nombre):
+        data = cargar()
+        server_data = get_server_data(data, str(ctx.guild.id))
+
+        key = ut.buscar_anime(server_data, nombre)
+        if not key:
+            return await ctx.send("❌ No existe ese anime 😢")
+
+        info = server_data[key]
+
+        imagen = self._obtener_imagen(key)
+        embed = self._crear_embed_votacion(key, imagen)
+
+        msg = await ctx.send(embed=embed)
+        await self._agregar_reacciones(msg)
+
+        # estado
+        info["mensaje_votacion"] = msg.id
+        if "votos" not in info:
+            info["votos"] = {}
+        info["votacion_activa"] = True
+
+        guardar(data)
+
+        # timer
+        await asyncio.sleep(120)
+        await self._cerrar_votacion(ctx, key)
+
+    # =========================
+    # 🏆 POPULAR
+    # =========================
+    @commands.command()
+    async def popular(self, ctx):
+        data = cargar()
+        server_data = get_server_data(data, str(ctx.guild.id))
+
+        ranking = self._calcular_ranking(server_data)
+        embed = self._crear_embed_ranking(ranking)
 
         await ctx.send(embed=embed)
 
