@@ -294,9 +294,14 @@ class Utilidades(commands.Cog):
             "• Actualiza el estado del anime, señalando que cada participante lo ha visto enteramente.",
 
             "infobot":
-            "*Sintaxis:* $guia \"Comando\"\n"
+            "*Sintaxis:* $infobot\n"
             "→ Entrega todos los datos relacionados con el desarrollo actual del bot.\n"
             "• Link del repositorio, versión actual y desarrollador.",
+
+            "guia":
+            "*Sintaxis:* $guia \"Comando\"\n"
+            "→ Entrega la información relacionada al uso de un comando en particular.\n"
+            "• Indica nomenclatura, parámetros y la acción que realiza.",
 
             "eliminaranime":
             "*Sintaxis:* $eliminaranime \"Nombre\"\n"
