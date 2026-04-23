@@ -156,7 +156,18 @@ class Utilidades(commands.Cog):
             inline=False
         )
 
-        embed.add_field(name="🧪 Versión", value="v2026-04-20 (beta)", inline=True)
+        embed.add_field(
+        name="🆕 Novedades",
+        value=(
+            "• $avanzar permite actualizar múltiples usuarios\n"
+            "• Sistema de votos corregido y optimizado\n"
+            "• Mejor manejo de reacciones\n"
+            "• Código refactorizado en módulos más pequeños"
+        ),
+        inline=False
+    )
+
+        embed.add_field(name="🧪 Versión", value="v2026-04-23(beta)", inline=True)
 
         embed.add_field(
             name="📦 Repositorio",
@@ -167,6 +178,16 @@ class Utilidades(commands.Cog):
         embed.set_footer(text="ABLX Anime Tracker • Beta version")
 
         return embed
+    
+    @commands.command()
+    async def ping(self, ctx):
+        latencia = round(self.bot.latency * 1000)
+        embed = discord.Embed(
+            title="🏓 Pong! 😊",
+            description=f"Latencia: **{latencia} ms**",
+            color=0x00ffcc
+        )
+        await ctx.send(embed=embed)
 
     # =========================
     # 📜 COMANDOS
@@ -191,6 +212,7 @@ class Utilidades(commands.Cog):
             "⏳ $progreso Nombre\n"
             "❓ $guia Comando\n"
             "📦 $infobot\n"
+            "🏓 $ping\n"
             "💡 Prefijos: $"
         )
 
@@ -285,9 +307,13 @@ class Utilidades(commands.Cog):
             "progreso":
             "*Sintaxis:* $progreso \"Nombre\"\n"
             "→ Muestra qué tan avanzados están los usuarios en un anime.\n"
-            "• Indica quién va más adelantado o atrasado."
-        }
+            "• Indica quién va más adelantado o atrasado.",
 
+            "ping":
+            "*Sintaxis:* $ping\n"
+            "→ Muestra la latencia del bot y si se encuentra operativo"
+        }
+    
 
 async def setup(bot):
     await bot.add_cog(Utilidades(bot))
