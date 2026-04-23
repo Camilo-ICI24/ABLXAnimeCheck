@@ -207,7 +207,7 @@ class Anime(commands.Cog):
 
         if info.get("image"):
             embed.set_thumbnail(url=info["image"])
-            
+
         await ctx.send(embed=embed)
 
     # =========================
@@ -372,6 +372,48 @@ class Anime(commands.Cog):
                 value="Todos los aliases ya existían 😅",
                 inline=False
             )
+
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def visto(self, ctx, *, nombre):
+        data, server_data = self._get_data(ctx)
+
+        key = ut.buscar_anime(server_data, nombre)
+
+        if not key:
+            return await ctx.send("❌ No existe ese anime 😢")
+
+        usuarios = server_data[key].get("usuarios", {})
+        uid = str(ctx.author.id)
+
+        if uid not in usuarios:
+            return await ctx.send("❌ No estás en ese anime 😢")
+
+        # =========================
+        # 🏁 MARCAR COMO VISTO
+        # =========================
+        if isinstance(usuarios[uid], dict):
+            usuarios[uid]["visto"] = True
+        else:
+            usuarios[uid] = {
+                "cap": usuarios[uid],
+                "visto": True
+            }
+
+        guardar(data)
+
+        embed = discord.Embed(
+            title="🏁 Anime completado",
+            description=f"{ctx.author.mention} terminó **{key}** 🎉",
+            color=0x00ffcc
+        )
+
+        embed.add_field(
+            name="Estado",
+            value="✔ Marcado como visto",
+            inline=False
+        )
 
         await ctx.send(embed=embed)
 
