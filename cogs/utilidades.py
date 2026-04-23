@@ -240,7 +240,7 @@ class Utilidades(commands.Cog):
             "Ejemplo: `$guia startanime`\n\n"
             "Comandos disponibles:\n"
             "startanime, unirse, verinfo, avanzar, lista, votar, popular, renombrar, end, "
-            "guia, progreso, eliminaranime"
+            "guia, progreso, eliminaranime, infobot, ping"
         )
 
     def _obtener_guias(self):
@@ -263,9 +263,12 @@ class Utilidades(commands.Cog):
             "• Usuarios que lo están viendo",
 
             "avanzar":
-            "*Sintaxis:* $avanzar <capitulo> Nombre\n"
+            "*Sintaxis:* $avanzar <capitulo> Nombre @user1 @user2 @user_n\n"
             "→ Actualiza el capítulo actual del anime.\n"
-            "• Reemplaza el progreso anterior",
+            "• Reemplaza el progreso anterior. \n"
+            "• Si el usuario no se especifica, quien utilizó el comando avanzará a ese capítulo."
+            "• Si el usuario taggeado es el mismo que quien usa el comando, aquel avanzará."
+            "• Si se taggean dos o más usuarios, todos ellos avanzan al capítulo indicado.",
 
             "lista":
             "*Sintaxis:* $lista\n"
@@ -294,7 +297,7 @@ class Utilidades(commands.Cog):
             "• Actualiza el estado del anime, señalando que cada participante lo ha visto enteramente.",
 
             "infobot":
-            "*Sintaxis:* $guia \"Comando\"\n"
+            "*Sintaxis:* $infobot\n"
             "→ Entrega todos los datos relacionados con el desarrollo actual del bot.\n"
             "• Link del repositorio, versión actual y desarrollador.",
 
@@ -308,6 +311,11 @@ class Utilidades(commands.Cog):
             "*Sintaxis:* $progreso \"Nombre\"\n"
             "→ Muestra qué tan avanzados están los usuarios en un anime.\n"
             "• Indica quién va más adelantado o atrasado.",
+
+            "guia":
+            "*Sintaxis:* $guia \"Comando\"\n"
+            "→ Muestra la nomenclatura del comando indicado y la acción que realiza.\n"
+            "• Indica la funcionalidad y parámetros que el comando necesita.",
 
             "ping":
             "*Sintaxis:* $ping\n"
