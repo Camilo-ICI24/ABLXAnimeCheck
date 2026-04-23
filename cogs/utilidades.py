@@ -207,6 +207,7 @@ class Utilidades(commands.Cog):
             "📊 $votar Nombre\n"
             "🏆 $popular\n"
             "✏️ $renombrar \"Nombre actual\" \"Nombre nuevo\"\n"
+            "🏷️ $alias \"Nombre\" \"alias1\" \"alias2\" ...\n"
             "🏁 $end Nombre\n"
             "❌ $eliminaranime \"Nombre\"\n"
             "⏳ $progreso Nombre\n"
@@ -313,6 +314,12 @@ class Utilidades(commands.Cog):
             "*Sintaxis:* $progreso \"Nombre\"\n"
             "→ Muestra qué tan avanzados están los usuarios en un anime.\n"
             "• Indica quién va más adelantado o atrasado.",
+
+            "alias":
+            "*Sintaxis:* $alias \"Nombre\" \"alias1\" \"alias2\" ...\n"
+            "→ Permite agregar nombres alternativos a un anime.\n"
+            "• Facilita buscar el anime con diferentes nombres o abreviaciones.\n"
+            "• Puedes agregar múltiples aliases en un solo comando.",
 
             "ping":
             "*Sintaxis:* $ping\n"
