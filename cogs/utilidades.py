@@ -112,19 +112,55 @@ class Utilidades(commands.Cog):
         menciones = self._formatear_menciones(usuarios)
 
         return f"📖 Capítulo: {cap}\n👥 Viendo:\n{menciones}"
+    
+    def _formatear_menciones(self, usuarios):
+        if not usuarios:
+            return "Nadie viendo aún"
+
+        resultado = []
+
+        for uid, data in usuarios.items():
+
+            # compatibilidad viejo / nuevo sistema
+            if isinstance(data, dict):
+                cap = data.get("cap", 1)
+                visto = data.get("visto", False)
+            else:
+                cap = data
+                visto = False
+
+            texto = f"👤 <@{uid}> → Cap {cap}"
+
+            if visto:
+                texto += " ✅"
+
+            resultado.append(texto)
+
+        return "\n".join(resultado)
 
     def _normalizar_usuarios(self, usuarios, cap):
         if isinstance(usuarios, list):
             return {uid: cap for uid in usuarios}
         return usuarios
 
-    def _formatear_menciones(self, usuarios):
-        if not usuarios:
-            return "Nadie viendo aún"
+    def _normalizar_usuarios(self, usuarios, cap):
+        nuevos = {}
 
-        return "\n".join(
-            [f"👤 <@{uid}> → Cap {c}" for uid, c in usuarios.items()]
-        )
+        for uid, data in usuarios.items():
+
+            # compatibilidad vieja
+            if isinstance(data, dict):
+                nuevos[uid] = {
+                    "cap": data.get("cap", cap),
+                    "visto": data.get("visto", False)
+                }
+            else:
+                nuevos[uid] = {
+                    "cap": data,
+                    "visto": False
+                }
+
+        return nuevos
 
     # =========================
     # 🤖 INFO BOT
@@ -159,10 +195,8 @@ class Utilidades(commands.Cog):
         embed.add_field(
         name="🆕 Novedades",
         value=(
-            "• $avanzar permite actualizar múltiples usuarios\n"
-            "• Sistema de votos corregido y optimizado\n"
-            "• Mejor manejo de reacciones\n"
-            "• Código refactorizado en módulos más pequeños"
+            "• Nuevo comando $alias para asociar nombres alternativos a animes\n"
+            "• Nuevo comando $visto para marcar animes como completados ✅\n"
         ),
         inline=False
     )
@@ -207,6 +241,8 @@ class Utilidades(commands.Cog):
             "📊 $votar Nombre\n"
             "🏆 $popular\n"
             "✏️ $renombrar \"Nombre actual\" \"Nombre nuevo\"\n"
+            "🏷️ $alias \"Nombre\" \"alias1\" \"alias2\" ...\n"
+            "✅ $visto \"Nombre\"\n"
             "🏁 $end Nombre\n"
             "❌ $eliminaranime \"Nombre\"\n"
             "⏳ $progreso Nombre\n"
@@ -298,8 +334,14 @@ class Utilidades(commands.Cog):
 
             "infobot":
             "*Sintaxis:* $infobot\n"
+            "*Sintaxis:* $infobot\n"
             "→ Entrega todos los datos relacionados con el desarrollo actual del bot.\n"
             "• Link del repositorio, versión actual y desarrollador.",
+
+            "guia":
+            "*Sintaxis:* $guia \"Comando\"\n"
+            "→ Entrega la información relacionada al uso de un comando en particular.\n"
+            "• Indica nomenclatura, parámetros y la acción que realiza.",
 
             "eliminaranime":
             "*Sintaxis:* $eliminaranime \"Nombre\"\n"
@@ -311,6 +353,19 @@ class Utilidades(commands.Cog):
             "*Sintaxis:* $progreso \"Nombre\"\n"
             "→ Muestra qué tan avanzados están los usuarios en un anime.\n"
             "• Indica quién va más adelantado o atrasado.",
+
+            "alias":
+            "*Sintaxis:* $alias \"Nombre\" \"alias1\" \"alias2\" ...\n"
+            "→ Permite agregar nombres alternativos a un anime.\n"
+            "• Facilita buscar el anime con diferentes nombres o abreviaciones.\n"
+            "• Puedes agregar múltiples aliases en un solo comando.",
+
+            "visto":
+            "*Sintaxis:* $visto \"Nombre\"\n"
+            "→ Marca el anime como terminado para ti.\n"
+            "• Añade un ✅ junto a tu progreso en $lista.\n"
+            "• No afecta a otros usuarios.\n"
+            "• Puedes seguir avanzando luego si el anime continúa.",
 
             "guia":
             "*Sintaxis:* $guia \"Comando\"\n"

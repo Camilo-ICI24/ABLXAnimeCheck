@@ -11,18 +11,32 @@ def limpiar_usuarios(info):
 
     if isinstance(usuarios, list):
         return {
-            str(uid): info.get("capitulo", 1)
+            str(uid): {"cap": info.get("capitulo", 1), "visto": False}
             for uid in usuarios
         }
 
     if isinstance(usuarios, dict):
-        return {
-            str(uid): int(cap) if isinstance(cap, int) else 1
-            for uid, cap in usuarios.items()
-        }
+        nuevos = {}
+
+        for uid, data in usuarios.items():
+
+            # 🆕 FORMATO NUEVO
+            if isinstance(data, dict):
+                nuevos[str(uid)] = {
+                    "cap": int(data.get("cap", 1)),
+                    "visto": bool(data.get("visto", False))
+                }
+
+            # 🔙 FORMATO ANTIGUO
+            elif isinstance(data, int):
+                nuevos[str(uid)] = {
+                    "cap": data,
+                    "visto": False
+                }
+
+        return nuevos
 
     return {}
-
 
 # =========================
 # 📊 VOTOS
