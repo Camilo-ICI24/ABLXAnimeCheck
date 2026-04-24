@@ -39,7 +39,6 @@ class Utilidades(commands.Cog):
     @staticmethod
     def buscar_anime(server_data, nombre):
         nombre = Utilidades.normalizar(nombre)
-
         candidatos, mapa = Utilidades._construir_candidatos(server_data)
 
         if nombre in mapa:
@@ -54,17 +53,21 @@ class Utilidades(commands.Cog):
         mapa = {}
 
         for key, info in server_data.items():
-            key_norm = Utilidades.normalizar(key)
-
-            candidatos.append(key_norm)
-            mapa[key_norm] = key
-
-            for alias in info.get("aliases", []):
-                alias_norm = Utilidades.normalizar(alias)
-                candidatos.append(alias_norm)
-                mapa[alias_norm] = key
+            Utilidades._agregar_candidato(key, key, candidatos, mapa)
+            Utilidades._agregar_aliases(info, key, candidatos, mapa)
 
         return candidatos, mapa
+
+    @staticmethod
+    def _agregar_candidato(texto, key_original, candidatos, mapa):
+        texto_norm = Utilidades.normalizar(texto)
+        candidatos.append(texto_norm)
+        mapa[texto_norm] = key_original
+
+    @staticmethod
+    def _agregar_aliases(info, key, candidatos, mapa):
+        for alias in info.get("aliases", []):
+            Utilidades._agregar_candidato(alias, key, candidatos, mapa)
 
     @staticmethod
     def _fuzzy_match(nombre, candidatos):
@@ -91,20 +94,20 @@ class Utilidades(commands.Cog):
         return data, server_data
 
     def _crear_embed_lista(self, server_data):
-        embed = discord.Embed(
+        embed = self._crear_base_embed_lista()
+
+        for nombre, info in sorted(server_data.items()):
+            valor = self._formatear_anime_lista(info)
+            embed.add_field(name=f"🎬 {nombre}", value=valor, inline=False)
+
+        return embed
+
+    def _crear_base_embed_lista(self):
+        return discord.Embed(
             title="📺 Animes en emisión",
             description="Listado de animes activos en el servidor",
             color=0x00ffcc
         )
-
-        for nombre, info in sorted(server_data.items()):
-            embed.add_field(
-                name=f"🎬 {nombre}",
-                value=self._formatear_anime_lista(info),
-                inline=False
-            )
-
-        return embed
 
     def _formatear_anime_lista(self, info):
         cap = info.get("capitulo", 1)
@@ -112,55 +115,51 @@ class Utilidades(commands.Cog):
         menciones = self._formatear_menciones(usuarios)
 
         return f"📖 Capítulo: {cap}\n👥 Viendo:\n{menciones}"
-    
+
+    # =========================
+    # 👥 USUARIOS FORMATO
+    # =========================
     def _formatear_menciones(self, usuarios):
         if not usuarios:
             return "Nadie viendo aún"
 
-        resultado = []
+        return "\n".join(
+            self._formatear_usuario(uid, data)
+            for uid, data in usuarios.items()
+        )
 
-        for uid, data in usuarios.items():
+    def _formatear_usuario(self, uid, data):
+        cap, visto = self._extraer_estado_usuario(data)
 
-            # compatibilidad viejo / nuevo sistema
-            if isinstance(data, dict):
-                cap = data.get("cap", 1)
-                visto = data.get("visto", False)
-            else:
-                cap = data
-                visto = False
+        texto = f"👤 <@{uid}> → Cap {cap}"
+        if visto:
+            texto += " ✅"
 
-            texto = f"👤 <@{uid}> → Cap {cap}"
+        return texto
 
-            if visto:
-                texto += " ✅"
-
-            resultado.append(texto)
-
-        return "\n".join(resultado)
-
-    def _normalizar_usuarios(self, usuarios, cap):
-        if isinstance(usuarios, list):
-            return {uid: cap for uid in usuarios}
-        return usuarios
+    def _extraer_estado_usuario(self, data):
+        if isinstance(data, dict):
+            return data.get("cap", 1), data.get("visto", False)
+        return data, False
 
     def _normalizar_usuarios(self, usuarios, cap):
         nuevos = {}
 
         for uid, data in usuarios.items():
-
-            # compatibilidad vieja
-            if isinstance(data, dict):
-                nuevos[uid] = {
-                    "cap": data.get("cap", cap),
-                    "visto": data.get("visto", False)
-                }
-            else:
-                nuevos[uid] = {
-                    "cap": data,
-                    "visto": False
-                }
+            nuevos[uid] = self._normalizar_usuario_individual(data, cap)
 
         return nuevos
+
+    def _normalizar_usuario_individual(self, data, cap):
+        if isinstance(data, dict):
+            return {
+                "cap": data.get("cap", cap),
+                "visto": data.get("visto", False)
+            }
+        return {
+            "cap": data,
+            "visto": False
+        }
 
     # =========================
     # 🤖 INFO BOT
@@ -180,6 +179,14 @@ class Utilidades(commands.Cog):
             color=0x00ffcc
         )
 
+        self._agregar_seccion_funciones(embed)
+        self._agregar_seccion_novedades(embed)
+        self._agregar_seccion_metadata(embed)
+
+        embed.set_footer(text="ABLX Anime Tracker • Beta version")
+        return embed
+
+    def _agregar_seccion_funciones(self, embed):
         embed.add_field(
             name="📌 Qué hace",
             value=(
@@ -192,36 +199,39 @@ class Utilidades(commands.Cog):
             inline=False
         )
 
+    def _agregar_seccion_novedades(self, embed):
         embed.add_field(
-        name="🆕 Novedades",
-        value=(
-            "• Nuevo comando $alias para asociar nombres alternativos a animes\n"
-            "• Nuevo comando $visto para marcar animes como completados ✅\n"
-        ),
-        inline=False
-    )
+            name="🆕 Novedades",
+            value=(
+                "• Nuevo comando $alias para asociar nombres alternativos a animes\n"
+                "• Nuevo comando $visto para marcar animes como completados ✅\n"
+            ),
+            inline=False
+        )
 
+    def _agregar_seccion_metadata(self, embed):
         embed.add_field(name="🧪 Versión", value="v2026-04-23(beta)", inline=True)
-
         embed.add_field(
             name="📦 Repositorio",
             value="[GitHub](https://github.com/Camilo-ICI24/ABLXAnimeCheck.git)",
             inline=True
         )
 
-        embed.set_footer(text="ABLX Anime Tracker • Beta version")
-
-        return embed
-    
+    # =========================
+    # 🏓 PING
+    # =========================
     @commands.command()
     async def ping(self, ctx):
         latencia = round(self.bot.latency * 1000)
-        embed = discord.Embed(
+        embed = self._crear_embed_ping(latencia)
+        await ctx.send(embed=embed)
+
+    def _crear_embed_ping(self, latencia):
+        return discord.Embed(
             title="🏓 Pong! 😊",
             description=f"Latencia: **{latencia} ms**",
             color=0x00ffcc
         )
-        await ctx.send(embed=embed)
 
     # =========================
     # 📜 COMANDOS
@@ -257,7 +267,6 @@ class Utilidades(commands.Cog):
     # =========================
     @commands.command()
     async def guia(self, ctx, comando=None):
-
         if not comando:
             return await ctx.send(self._guia_general())
 
@@ -281,6 +290,8 @@ class Utilidades(commands.Cog):
 
     def _obtener_guias(self):
         return {
+            # (igual que el tuyo, sin cambios)
+            # lo dejé intacto para no alterar nada 👍
             "startanime":
             "*Sintaxis:* $startanime \"Nombre\" @sugeridor @user1 @user2 @user_n\n"
             "→ Inicia un anime nuevo en el server para reaccionar.\n"
@@ -367,7 +378,7 @@ class Utilidades(commands.Cog):
             "*Sintaxis:* $ping\n"
             "→ Muestra la latencia del bot y si se encuentra operativo"
         }
-    
+
 
 async def setup(bot):
     await bot.add_cog(Utilidades(bot))

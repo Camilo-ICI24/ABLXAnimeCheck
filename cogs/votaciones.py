@@ -11,7 +11,7 @@ class Votaciones(commands.Cog):
         self.bot = bot
 
     # =========================
-    # 🔧 HELPERS
+    # 🔧 HELPERS GENERALES
     # =========================
     def _emoji_map(self):
         return {
@@ -22,34 +22,43 @@ class Votaciones(commands.Cog):
             "5️⃣": 5
         }
 
+    def _get_data(self, ctx):
+        data = cargar()
+        server_data = get_server_data(data, str(ctx.guild.id))
+        return data, server_data
+
+    # =========================
+    # 🔍 BÚSQUEDA
+    # =========================
     def _buscar_votacion(self, server_data, message_id):
         for anime, info in server_data.items():
             if info.get("mensaje_votacion") == message_id:
                 return anime, info
         return None, None
 
+    def _buscar_anime(self, server_data, nombre):
+        return ut.buscar_anime(server_data, nombre)
+
+    # =========================
+    # 💾 VOTOS
+    # =========================
     def _guardar_voto(self, info, user_id, score):
         votos = info.setdefault("votos", {})
         votos[user_id] = score
 
-    async def _quitar_reaccion(self, reaction, user):
-        try:
-            await reaction.message.remove_reaction(reaction.emoji, user)
-        except Exception as e:
-            print("Error al quitar reacción:", e)
+    def _inicializar_votacion(self, info, message_id):
+        info["mensaje_votacion"] = message_id
+        if "votos" not in info:
+            info["votos"] = {}
+        info["votacion_activa"] = True
 
-    def _obtener_imagen(self, nombre):
-        try:
-            res = requests.get(
-                f"https://api.jikan.moe/v4/anime?q={nombre}&limit=1"
-            )
-            api = res.json().get("data", [])
-            if api:
-                return api[0]["images"]["jpg"]["image_url"]
-        except:
-            pass
-        return None
+    def _cerrar_estado_votacion(self, server_data, key):
+        if key in server_data:
+            server_data[key]["votacion_activa"] = False
 
+    # =========================
+    # 🎨 EMBEDS
+    # =========================
     def _crear_embed_votacion(self, nombre, imagen):
         embed = discord.Embed(
             title=f"📊 Votación: {nombre}",
@@ -60,48 +69,12 @@ class Votaciones(commands.Cog):
             embed.set_image(url=imagen)
         return embed
 
-    async def _agregar_reacciones(self, msg):
-        for e in ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]:
-            await msg.add_reaction(e)
-
-    async def _cerrar_votacion(self, ctx, key):
-        data = cargar()
-        server_data = get_server_data(data, str(ctx.guild.id))
-
-        if key in server_data:
-            server_data[key]["votacion_activa"] = False
-
-        guardar(data)
-
-        embed_end = discord.Embed(
+    def _crear_embed_fin(self, key):
+        return discord.Embed(
             title="⏳ Votación finalizada",
             description=f"Se cerró la votación de **{key}**",
             color=0xff4444
         )
-
-        await ctx.send(embed=embed_end)
-
-    def _calcular_ranking(self, server_data):
-        ranking = []
-
-        for nombre, info in server_data.items():
-            votos = info.get("votos", {})
-
-            if not votos:
-                continue
-
-            votos_limpios = [int(v) for v in votos.values() if isinstance(v, int)]
-            if not votos_limpios:
-                continue
-
-            total = sum(votos_limpios)
-            cantidad = len(votos_limpios)
-
-            promedio = total / cantidad if cantidad > 0 else 0
-
-            ranking.append((nombre, promedio, info.get("sugerido_por")))
-
-        return sorted(ranking, key=lambda x: x[1], reverse=True)
 
     def _crear_embed_ranking(self, ranking):
         embed = discord.Embed(
@@ -131,11 +104,67 @@ class Votaciones(commands.Cog):
         return embed
 
     # =========================
-    # 🎯 REACCIONES
+    # 🌐 API
+    # =========================
+    def _obtener_imagen(self, nombre):
+        try:
+            res = requests.get(
+                f"https://api.jikan.moe/v4/anime?q={nombre}&limit=1"
+            )
+            api = res.json().get("data", [])
+            if api:
+                return api[0]["images"]["jpg"]["image_url"]
+        except:
+            pass
+        return None
+
+    # =========================
+    # 🎭 REACCIONES
+    # =========================
+    async def _agregar_reacciones(self, msg):
+        for e in ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]:
+            await msg.add_reaction(e)
+
+    async def _quitar_reaccion(self, reaction, user):
+        try:
+            await reaction.message.remove_reaction(reaction.emoji, user)
+        except Exception as e:
+            print("Error al quitar reacción:", e)
+
+    # =========================
+    # 🧠 RANKING
+    # =========================
+    def _calcular_promedio(self, votos):
+        votos_limpios = [int(v) for v in votos.values() if isinstance(v, int)]
+
+        if not votos_limpios:
+            return None
+
+        total = sum(votos_limpios)
+        cantidad = len(votos_limpios)
+
+        return total / cantidad if cantidad > 0 else 0
+
+    def _calcular_ranking(self, server_data):
+        ranking = []
+
+        for nombre, info in server_data.items():
+            votos = info.get("votos", {})
+            promedio = self._calcular_promedio(votos)
+
+            if promedio is None:
+                continue
+
+            ranking.append((nombre, promedio, info.get("sugerido_por")))
+
+        return sorted(ranking, key=lambda x: x[1], reverse=True)
+
+    # =========================
+    # 🎯 EVENTO REACCIONES
     # =========================
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
-        if user.bot or not reaction.message.guild:
+        if self._ignorar_reaccion(user, reaction):
             return
 
         emoji_map = self._emoji_map()
@@ -144,13 +173,11 @@ class Votaciones(commands.Cog):
         if emoji not in emoji_map:
             return
 
-        data = cargar()
-        guild_id = str(reaction.message.guild.id)
-        server_data = get_server_data(data, guild_id)
+        data, server_data = self._get_data_from_reaction(reaction)
 
         _, target = self._buscar_votacion(server_data, reaction.message.id)
 
-        if not target or not target.get("votacion_activa", False):
+        if not self._votacion_valida(target):
             return
 
         user_id = str(user.id)
@@ -160,15 +187,26 @@ class Votaciones(commands.Cog):
 
         await self._quitar_reaccion(reaction, user)
 
+    def _ignorar_reaccion(self, user, reaction):
+        return user.bot or not reaction.message.guild
+
+    def _get_data_from_reaction(self, reaction):
+        data = cargar()
+        guild_id = str(reaction.message.guild.id)
+        server_data = get_server_data(data, guild_id)
+        return data, server_data
+
+    def _votacion_valida(self, target):
+        return target and target.get("votacion_activa", False)
+
     # =========================
     # 📊 VOTAR
     # =========================
     @commands.command()
     async def votar(self, ctx, *, nombre):
-        data = cargar()
-        server_data = get_server_data(data, str(ctx.guild.id))
+        data, server_data = self._get_data(ctx)
 
-        key = ut.buscar_anime(server_data, nombre)
+        key = self._buscar_anime(server_data, nombre)
         if not key:
             return await ctx.send("❌ No existe ese anime 😢")
 
@@ -180,25 +218,30 @@ class Votaciones(commands.Cog):
         msg = await ctx.send(embed=embed)
         await self._agregar_reacciones(msg)
 
-        # estado
-        info["mensaje_votacion"] = msg.id
-        if "votos" not in info:
-            info["votos"] = {}
-        info["votacion_activa"] = True
-
+        self._inicializar_votacion(info, msg.id)
         guardar(data)
 
-        # timer
+        await self._esperar_y_cerrar(ctx, key)
+
+    async def _esperar_y_cerrar(self, ctx, key):
         await asyncio.sleep(120)
         await self._cerrar_votacion(ctx, key)
+
+    async def _cerrar_votacion(self, ctx, key):
+        data, server_data = self._get_data(ctx)
+
+        self._cerrar_estado_votacion(server_data, key)
+        guardar(data)
+
+        embed_end = self._crear_embed_fin(key)
+        await ctx.send(embed=embed_end)
 
     # =========================
     # 🏆 POPULAR
     # =========================
     @commands.command()
     async def popular(self, ctx):
-        data = cargar()
-        server_data = get_server_data(data, str(ctx.guild.id))
+        data, server_data = self._get_data(ctx)
 
         ranking = self._calcular_ranking(server_data)
         embed = self._crear_embed_ranking(ranking)
