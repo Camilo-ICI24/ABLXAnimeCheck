@@ -84,8 +84,19 @@ class Utilidades(commands.Cog):
         if not server_data:
             return await ctx.send("📭 No hay animes en emisión 😢")
 
-        embed = self._crear_embed_lista(server_data)
-        await ctx.send(embed=embed)
+        paginas, total_paginas = self._preparar_paginacion(server_data)
+
+        msg = await self._enviar_pagina(ctx, paginas, total_paginas, 0)
+
+        if total_paginas == 1:
+            return
+
+        await self._agregar_reacciones(msg)
+        await self._manejar_paginacion(ctx, msg, paginas, total_paginas)
+
+    # =========================
+    # 📋 HELPERS LISTA
+    # =========================
 
     def _get_data(self, ctx):
         from db import cargar, get_server_data
@@ -93,7 +104,7 @@ class Utilidades(commands.Cog):
         server_data = get_server_data(data, str(ctx.guild.id))
         return data, server_data
 
-    def _crear_embed_lista(self, server_data):
+    def _crear_embed_(self, server_data):
         embed = self._crear_base_embed_lista()
 
         for nombre, info in sorted(server_data.items()):
@@ -115,6 +126,76 @@ class Utilidades(commands.Cog):
         menciones = self._formatear_menciones(usuarios)
 
         return f"📖 Capítulo: {cap}\n👥 Viendo:\n{menciones}"
+    
+    def _chunk_animes(self, server_data, size=5):
+        items = list(sorted(server_data.items()))
+        return [items[i:i + size] for i in range(0, len(items), size)]
+    
+    def _crear_embed_lista_pagina(self, pagina, total_paginas, animes):
+        embed = self._crear_base_embed_lista()
+
+        embed.set_footer(text=f"Página {pagina+1}/{total_paginas}")
+
+        for nombre, info in animes:
+            valor = self._formatear_anime_lista(info)
+            embed.add_field(name=f"🎬 {nombre}", value=valor, inline=False)
+
+        return embed
+    
+    def _preparar_paginacion(self, server_data):
+        paginas = self._chunk_animes(server_data, 5)
+        return paginas, len(paginas)
+
+    async def _enviar_pagina(self, ctx, paginas, total_paginas, index):
+        embed = self._crear_embed_lista_pagina(index, total_paginas, paginas[index])
+        return await ctx.send(embed=embed)
+
+    async def _agregar_reacciones(self, msg):
+        await msg.add_reaction("◀️")
+        await msg.add_reaction("▶️")
+
+    def _check_reaccion(self, ctx, msg):
+        def check(reaction, user):
+            return (
+                user == ctx.author and
+                str(reaction.emoji) in ["◀️", "▶️"] and
+                reaction.message.id == msg.id
+            )
+        return check
+    
+    def _siguiente_pagina(self, actual, total_paginas, emoji):
+        if emoji == "▶️":
+            return (actual + 1) % total_paginas
+        return (actual - 1) % total_paginas
+    
+    async def _manejar_paginacion(self, ctx, msg, paginas, total_paginas):
+        actual = 0
+        check = self._check_reaccion(ctx, msg)
+
+        while True:
+            try:
+                reaction, user = await self.bot.wait_for(
+                    "reaction_add",
+                    timeout=60,
+                    check=check
+                )
+            except:
+                break
+
+            actual = self._siguiente_pagina(actual, total_paginas, str(reaction.emoji))
+
+            embed = self._crear_embed_lista_pagina(
+                actual,
+                total_paginas,
+                paginas[actual]
+            )
+
+            await msg.edit(embed=embed)
+
+            try:
+                await msg.remove_reaction(reaction.emoji, user)
+            except:
+                pass
 
     # =========================
     # 👥 USUARIOS FORMATO
