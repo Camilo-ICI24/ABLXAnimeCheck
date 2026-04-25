@@ -208,6 +208,75 @@ class Anime(commands.Cog):
         guardar(data)
         return None, self._crear_embed_avance_multiple(capitulo, key, actualizados)
 
+    def _obtener_caps(self, usuarios):
+        caps = {}
+
+        for uid, data in usuarios.items():
+            if isinstance(data, dict):
+                caps[uid] = data.get("cap", 1)
+            else:
+                caps[uid] = data
+
+        return caps
+
+    def _detectar_desbalance(self, usuarios):
+        caps = self._obtener_caps(usuarios)
+
+        if len(caps) < 2:
+            return None, None
+
+        max_cap = max(caps.values())
+        min_cap = min(caps.values())
+
+        if max_cap - min_cap < 4:
+            return None, None
+
+        adelantados = [uid for uid, c in caps.items() if c == max_cap]
+        atrasados = [uid for uid, c in caps.items() if c == min_cap]
+
+        return adelantados, atrasados
+    
+    def _crear_embed_racha(self, key, adelantados):
+        return discord.Embed(
+            description=(
+                f"🚀 EN RACHA en **{key}**:\n"
+                + ", ".join(f"<@{uid}>" for uid in adelantados)
+            ),
+            color=0x00ffcc
+        )
+
+    def _crear_embed_atraso(self, key, atrasados):
+        return discord.Embed(
+            description=(
+                f"🐢 Se están quedando atrás en **{key}**:\n"
+                + ", ".join(f"<@{uid}>" for uid in atrasados) +
+                "\n¡Pónganse al día! 😤"
+            ),
+            color=0xff4444
+        )
+
+    async def _evaluar_progreso(self, ctx, key, usuarios):
+        adelantados, atrasados = self._detectar_desbalance(usuarios)
+
+        if not adelantados:
+            return
+
+        embed1 = self._crear_embed_racha(key, adelantados)
+        embed2 = self._crear_embed_atraso(key, atrasados)
+
+        await ctx.send(embed=embed1)
+        await ctx.send(embed=embed2)
+
+    def _actualizar_capitulo(self, usuarios, uid, capitulo):
+        if isinstance(usuarios[uid], dict):
+            usuarios[uid]["cap"] = capitulo
+            usuarios[uid]["visto"] = False
+        else:
+            usuarios[uid] = {
+                "cap": capitulo,
+                "visto": False
+            }
+
     # =========================
     # 🎬 START ANIME
     # =========================
@@ -310,13 +379,139 @@ class Anime(commands.Cog):
         usuarios = server_data[key].get("usuarios", {})
 
         if self._es_caso_individual(mencionados, autor_id):
-            error, embed = self._procesar_individual(usuarios, autor_id, capitulo, key, data)
+            error, embed = self._procesar_individual(
+                usuarios, autor_id, capitulo, key, data
+            )
         else:
-            error, embed = self._procesar_multiple(usuarios, mencionados, capitulo, key, data)
+            error, embed = self._procesar_multiple(
+                usuarios, mencionados, capitulo, key, data
+            )
 
         if error:
             return await ctx.send(error)
 
+        # ✅ Mensaje normal de avance
+        await ctx.send(embed=embed)
+
+        # 🔥 NUEVO: evaluar progreso grupal
+        adelantados, atrasados = self._detectar_desbalance(usuarios)
+
+        if adelantados:
+            embed_racha = self._crear_embed_racha(key, adelantados)
+            await ctx.send(embed=embed_racha)
+
+        if atrasados:
+            embed_atraso = self._crear_embed_atraso(key, atrasados)
+            await ctx.send(embed=embed_atraso)
+
+    # =========================
+    # 🔧 HELPERS ELIMINAR
+    # =========================
+    async def _confirmar_eliminacion(self, ctx, key):
+        await ctx.send(f"⚠️ ¿Seguro que quieres eliminar **{key}**? (sí/no)")
+
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        try:
+            msg = await self.bot.wait_for("message", check=check, timeout=20)
+        except:
+            return None
+
+        return msg.content.lower().strip() in ["sí", "si", "s", "yes", "y"]
+
+
+    # =========================
+    # 🧨 ELIMINAR ANIME
+    # =========================
+    @commands.command()
+    async def eliminaranime(self, ctx, *, nombre):
+        data, server_data = self._get_data(ctx)
+
+        key = self._get_key(server_data, nombre)
+        if not key:
+            return await ctx.send("❌ Ese anime no existe 😢")
+
+        confirmado = await self._confirmar_eliminacion(ctx, key)
+
+        if confirmado is None:
+            return await ctx.send("⌛ Tiempo agotado.")
+
+        if not confirmado:
+            return await ctx.send("❌ Cancelado.")
+
+        del server_data[key]
+        guardar(data)
+
+        await ctx.send(f"🧨 El anime **{key}** ha sido eliminado")
+
+    # =========================
+    # 🔧 HELPERS ALIAS
+    # =========================
+    def _normalizar_aliases(self, aliases):
+        return [a.strip() for a in aliases]
+
+    def _agregar_aliases(self, existentes, nuevos):
+        agregados = []
+
+        for alias in nuevos:
+            if alias not in existentes:
+                existentes.add(alias)
+                agregados.append(alias)
+
+        return agregados
+
+
+    def _crear_embed_alias(self, key, agregados):
+        embed = discord.Embed(
+            title="🏷️ Aliases actualizados",
+            description=f"Anime: **{key}**",
+            color=0x00ffcc
+        )
+
+        if agregados:
+            embed.add_field(
+                name="➕ Nuevos aliases",
+                value="\n".join(f"• {a}" for a in agregados),
+                inline=False
+            )
+        else:
+            embed.add_field(
+                name="⚠️ Sin cambios",
+                value="Todos los aliases ya existían 😅",
+                inline=False
+            )
+
+        return embed
+
+
+    # =========================
+    # 🏷️ ALIAS
+    # =========================
+    @commands.command()
+    async def alias(self, ctx, nombre: str, *aliases):
+        data, server_data = self._get_data(ctx)
+
+        key = self._get_key(server_data, nombre)
+        if not key:
+            return await ctx.send("❌ No existe ese anime 😢")
+
+        if not aliases:
+            return await ctx.send("❌ Debes ingresar al menos un alias 😢")
+
+        nuevos_alias = self._normalizar_aliases(aliases)
+
+        if "aliases" not in server_data[key]:
+            server_data[key]["aliases"] = []
+
+        existentes = set(server_data[key]["aliases"])
+
+        agregados = self._agregar_aliases(existentes, nuevos_alias)
+
+        server_data[key]["aliases"] = list(existentes)
+        guardar(data)
+
+        embed = self._crear_embed_alias(key, agregados)
         await ctx.send(embed=embed)
 
     # =========================
