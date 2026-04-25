@@ -446,6 +446,80 @@ class Anime(commands.Cog):
         await ctx.send(f"🧨 El anime **{key}** ha sido eliminado")
 
     # =========================
+    # ⏳ HELPERS PROGRESO
+    # =========================
+    def _obtener_caps(self, usuarios):
+        caps = {}
+
+        for uid, data in usuarios.items():
+            if isinstance(data, dict):
+                caps[uid] = int(data.get("cap", 1))
+            else:
+                caps[uid] = int(data)
+
+        return caps
+
+
+    def _ordenar_por_progreso(self, usuarios):
+        caps = self._obtener_caps(usuarios)
+
+        return sorted(
+            caps.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )
+
+
+    def _crear_embed_progreso(self, key, ordenados):
+        embed = discord.Embed(
+            title=f"⏳ Progreso: {key}",
+            description="Ranking de avance por usuario",
+            color=0x00ffcc
+        )
+
+        texto = []
+
+        for i, (uid, cap) in enumerate(ordenados, start=1):
+            linea = f"**{i}.** <@{uid}> → Cap {cap}"
+
+            if i == 1:
+                linea += " 🔥"
+            elif i == len(ordenados):
+                linea += " 🐢"
+
+            texto.append(linea)
+
+        embed.add_field(
+            name="📊 Ranking",
+            value="\n".join(texto),
+            inline=False
+        )
+
+        return embed
+    
+    # =========================
+    # ⏳ PROGRESO
+    # =========================
+    @commands.command()
+    async def progreso(self, ctx, *, nombre):
+        data, server_data = self._get_data(ctx)
+
+        key = self._get_key(server_data, nombre)
+
+        if not key:
+            return await ctx.send("❌ No existe ese anime 😢")
+
+        usuarios = server_data[key].get("usuarios", {})
+
+        if not usuarios:
+            return await ctx.send("❌ Nadie está viendo este anime 😢")
+
+        ordenados = self._ordenar_por_progreso(usuarios)
+
+        embed = self._crear_embed_progreso(key, ordenados)
+        await ctx.send(embed=embed)
+
+    # =========================
     # 🔧 HELPERS ALIAS
     # =========================
     def _normalizar_aliases(self, aliases):
