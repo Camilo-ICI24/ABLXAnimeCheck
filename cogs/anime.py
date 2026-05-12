@@ -1,9 +1,8 @@
 from discord.ext import commands
-from cogs.utilidades import Utilidades as ut
+from db import cargar, guardar, get_server_data
+from cogs.utilidades import Utilidades as ut, otorgar_logro
 import discord
 import requests
-from db import cargar, guardar, get_server_data
-
 
 class Anime(commands.Cog):
     def __init__(self, bot):
@@ -186,12 +185,17 @@ class Anime(commands.Cog):
 
     def _procesar_individual(self, usuarios, autor_id, capitulo, key, data):
         if autor_id not in usuarios:
-            return "❌ No estás en ese anime 😢", None
+            return "❌ No estás en ese anime 😢", None, False
 
-        usuarios[autor_id] = capitulo
+        cap_anterior, _ = self._parse_usuario(usuarios[autor_id])
+
+        self._actualizar_capitulo(usuarios, autor_id, capitulo)
+
         guardar(data)
 
-        return None, self._crear_embed_avance_individual(autor_id, capitulo, key)
+        logro_maraton = (capitulo - cap_anterior >= 5)
+
+        return None, self._crear_embed_avance_individual(autor_id, capitulo, key), logro_maraton
 
     def _procesar_multiple(self, usuarios, mencionados, capitulo, key, data):
         actualizados = []
@@ -308,6 +312,12 @@ class Anime(commands.Cog):
 
         await ctx.send(embed=embed)
 
+        cantidad_sugeridos = sum(1 for anime in server_data.values() if anime.get("sugerido_por") 
+                                 == str(ctx.author.id))
+
+        if cantidad_sugeridos >= 10:
+            await otorgar_logro(ctx, "recomendador")
+
     # =========================
     # 👥 UNIRSE
     # =========================
@@ -379,19 +389,24 @@ class Anime(commands.Cog):
         usuarios = server_data[key].get("usuarios", {})
 
         if self._es_caso_individual(mencionados, autor_id):
-            error, embed = self._procesar_individual(
-                usuarios, autor_id, capitulo, key, data
-            )
+            error, embed, logro_maraton = self._procesar_individual(usuarios, autor_id, 
+                                                                    capitulo, key, data)
         else:
             error, embed = self._procesar_multiple(
                 usuarios, mencionados, capitulo, key, data
             )
+
+        if logro_maraton:
+            await otorgar_logro(ctx, "primer_maraton")
 
         if error:
             return await ctx.send(error)
 
         # ✅ Mensaje normal de avance
         await ctx.send(embed=embed)
+
+        # Otorgar logro de primer capítulo si el usuario reacciona por primera vez
+        await otorgar_logro(ctx, "primer_capitulo")
 
         # 🔥 NUEVO: evaluar progreso grupal
         adelantados, atrasados = self._detectar_desbalance(usuarios)
@@ -611,6 +626,8 @@ class Anime(commands.Cog):
 
         embed = self._crear_embed_visto(ctx, key)
         await ctx.send(embed=embed)
+
+        await otorgar_logro(ctx, "finalista")
 
 
 async def setup(bot):

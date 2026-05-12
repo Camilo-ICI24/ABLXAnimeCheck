@@ -13,3 +13,4 @@ __pycache__/
 
 # json
 animes_server.json
+data/logros_server.json

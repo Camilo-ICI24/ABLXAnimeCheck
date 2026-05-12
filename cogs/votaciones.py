@@ -1,8 +1,8 @@
-import discord
 from discord.ext import commands
 from db import cargar, guardar, get_server_data
+from cogs.utilidades import Utilidades as ut, otorgar_logro
+import discord
 import requests
-from cogs.utilidades import Utilidades as ut
 import asyncio
 
 
@@ -182,7 +182,9 @@ class Votaciones(commands.Cog):
 
         user_id = str(user.id)
 
-        self._guardar_voto(target, user_id, emoji_map[emoji])
+        voto = emoji_map[emoji]
+
+        self._guardar_voto(target, user_id, voto)
         guardar(data)
 
         await self._quitar_reaccion(reaction, user)
@@ -230,10 +232,28 @@ class Votaciones(commands.Cog):
     async def _cerrar_votacion(self, ctx, key):
         data, server_data = self._get_data(ctx)
 
+        info = server_data[key]
+
+        votos = info.get("votos", {})
+
+        for uid, voto in votos.items():
+            try:
+                miembro = await ctx.guild.fetch_member(int(uid))
+            except:
+                continue
+
+            if voto == 5:
+                await otorgar_logro(ctx, "obra_maestra", usuario=miembro)
+
+            elif voto == 1:
+                await otorgar_logro(ctx, "hater_profesional", usuario=miembro)
+
         self._cerrar_estado_votacion(server_data, key)
+
         guardar(data)
 
         embed_end = self._crear_embed_fin(key)
+
         await ctx.send(embed=embed_end)
 
     # =========================

@@ -1,5 +1,7 @@
 from discord.ext import commands
 from difflib import get_close_matches as gcm
+from logros import (obtener_logros, otorgar_logro, cargar_logros, calcular_estadisticas, 
+                    LOGROS, RAREZAS, COLORES)
 import discord
 import re
 import unicodedata as ucd
@@ -307,12 +309,200 @@ class Utilidades(commands.Cog):
         embed = self._crear_embed_ping(latencia)
         await ctx.send(embed=embed)
 
+        if latencia < 50:
+            await otorgar_logro(ctx, "flash")
+
     def _crear_embed_ping(self, latencia):
         return discord.Embed(
             title="🏓 Pong! 😊",
             description=f"Latencia: **{latencia} ms**",
             color=0x00ffcc
         )
+
+    @commands.command()
+    async def logros(self, ctx):
+
+        logros_usuario = obtener_logros(ctx.author.id)
+
+        if not logros_usuario:
+            return await ctx.send(
+                "🏆 Aún no tienes logros..."
+            )
+
+        embed = discord.Embed(
+            title=f"🏆 Logros de {ctx.author.name}",
+            color=discord.Color.gold()
+        )
+
+        texto = ""
+
+        for logro_id, datos in logros_usuario.items():
+
+            texto += (
+                f"• **{logro_id}**\n"
+                f"📅 {datos['fecha']}\n\n"
+            )
+
+        embed.description = texto
+
+        await ctx.send(embed=embed)
+
+    # =========================
+    # HA/WA/MA
+    # =========================
+
+    @commands.command(aliases=["ha", "wa"])
+    async def ma(self, ctx):
+        embed = discord.Embed(
+            title="❌ ¡Oye!",
+            description=(
+                "Yo no soy Mudae 😭\n\n"
+                "Estás usando un comando que yo no admito.\n"
+                "¡Prueba otra vez! :D"
+            ),
+            color=discord.Color.red()
+        )
+
+        embed.set_footer(text="ABLX Anime Check")
+
+        await ctx.send(embed=embed)
+
+        # =========================
+        # LOGRO SECRETO
+        # =========================
+
+        await otorgar_logro(ctx, "mudae_confundido")
+
+    # =========================
+    # LOGROS
+    # =========================
+    @commands.command()
+    async def logros(self, ctx, usuario: discord.Member = None):
+        usuario = usuario or ctx.author
+
+        logros_usuario = obtener_logros(ctx.guild.id, usuario.id)
+
+        if not logros_usuario:
+            return await ctx.send("🏆 Este usuario aún no tiene logros")
+
+        data = cargar_logros()
+        server_id = str(ctx.guild.id)
+
+        logros_lista = list(logros_usuario.items())
+
+        actual = 0
+
+        def crear_embed(index):
+            logro_id, datos = logros_lista[index]
+
+            logro = LOGROS.get(
+                logro_id,
+                {
+                "nombre": logro_id,
+                "descripcion": "Sin descripción",
+                "rareza": "Corriente"
+                }
+            )
+
+            rareza = RAREZAS.get(
+                logro["rareza"],
+                {
+                "nombre": logro["rareza"],
+                "color": "grey"
+                }
+            )
+
+            color_embed = COLORES.get(
+                rareza["color"],
+                discord.Color.light_grey()
+            )
+
+            stats = calcular_estadisticas(data, server_id, logro_id)
+
+            embed = discord.Embed(
+                title=f"🏆 {logro['nombre']}",
+                description=logro["descripcion"],
+                color=color_embed
+            )
+
+            embed.set_thumbnail(url=usuario.display_avatar.url)
+
+            embed.add_field(
+                name="✨ Rareza",
+                value=rareza["nombre"],
+                inline=True
+            )
+
+            embed.add_field(
+                name="📅 Obtenido",
+                value=datos["fecha"],
+                inline=True
+            )
+
+            embed.add_field(
+                name="👥 Usuarios",
+                value=str(stats["usuarios"]),
+                inline=True
+            )
+
+            embed.add_field(
+                name="🔥 Últimas 24h",
+                value=str(stats["ultimo_dia"]),
+                inline=True
+            )
+
+            embed.set_footer(text=f"Logro {index+1}/{len(logros_lista)}")
+
+            return embed
+
+        # =========================
+        # MENSAJE INICIAL
+        # =========================
+
+        msg = await ctx.send(embed=crear_embed(actual))
+
+        if len(logros_lista) == 1:
+            return
+
+        await msg.add_reaction("◀️")
+        await msg.add_reaction("▶️")
+
+        # =========================
+        # CHECK
+        # =========================
+
+        def check(reaction, user):
+            return (
+                user == ctx.author
+                and reaction.message.id == msg.id
+                and str(reaction.emoji) in ["◀️", "▶️"]
+            )
+
+        # =========================
+        # PAGINACIÓN
+        # =========================
+
+        while True:
+
+            try:
+                reaction, user = await self.bot.wait_for("reaction_add", timeout=60, check=check)
+            except:
+                break
+
+            if str(reaction.emoji) == "▶️":
+                actual = (actual + 1) % len(logros_lista)
+
+            else:
+                actual = (actual - 1) % len(logros_lista)
+
+            await msg.edit(
+                embed=crear_embed(actual)
+            )
+
+            try:
+                await msg.remove_reaction(reaction.emoji, user)
+            except:
+                pass
 
     # =========================
     # 📜 COMANDOS
@@ -340,6 +530,8 @@ class Utilidades(commands.Cog):
             "❓ $guia Comando\n"
             "📦 $infobot\n"
             "🏓 $ping\n"
+            "🤫 $secreto\n"
+            "🏅 $logros @usuario\n"
             "💡 Prefijos: $"
         )
 
@@ -371,8 +563,6 @@ class Utilidades(commands.Cog):
 
     def _obtener_guias(self):
         return {
-            # (igual que el tuyo, sin cambios)
-            # lo dejé intacto para no alterar nada 👍
             "startanime":
             "*Sintaxis:* $startanime \"Nombre\" @sugeridor @user1 @user2 @user_n\n"
             "→ Inicia un anime nuevo en el server para reaccionar.\n"
@@ -457,7 +647,16 @@ class Utilidades(commands.Cog):
 
             "ping":
             "*Sintaxis:* $ping\n"
-            "→ Muestra la latencia del bot y si se encuentra operativo"
+            "→ Muestra la latencia del bot y si se encuentra operativo",
+
+            "logros":
+            "*Sintaxis:* $logros @usuario\n"
+            "→ Muestra los logros obtenidos por un usuario.\n"
+            "• Incluye descripción y fecha de obtención."
+            "• Si el usuario no es especificado, muestra tus propios logros.",
+
+            "secreto":
+            "???"
         }
 
 
