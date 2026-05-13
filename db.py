@@ -1,7 +1,9 @@
 import json
 import os
 
-DB_FILE = "animes_server.json"
+DB_FILE = "data/animes_server.json"
+USO_FILE = "data/uso_server.json"
+GUSTOS_FILE = "data/gustos_server.json"
 
 # =========================
 # 👥 HELPERS USUARIOS
@@ -202,6 +204,48 @@ def guardar(data):
     except Exception as e:
         print("Error guardando DB:", e)
 
+# =========================
+# USO DE COMANDOS
+# =========================
+def cargar_uso(path=USO_FILE):
+    if not os.path.exists(path):
+        return {}
+
+    try:
+        with open(path, "r") as archivo:
+            return json.load(archivo)
+    except Exception as error:
+        print("Se ha producido un error cargando este archivo: ", error)
+        return {}
+
+def guardar_uso(data, path=USO_FILE):
+    try:
+        with open(path, "w") as archivo:
+            json.dump(data, archivo, indent=4)
+    except Exception as error:
+        print("Se ha producido un error al guardar el uso de comandos: ", error)
+
+# =========================
+# 🔥 GUSTOS CAÓTICOS
+# =========================
+def cargar_gustos(path=GUSTOS_FILE):
+    if not os.path.exists(path):
+        return {}
+    
+    try:
+        with open(path, "r") as archivo:
+            return json.load(archivo)
+    except Exception as error:
+        print("Se ha producido un error cargando gustos:", error)
+
+        return {}
+
+def guardar_gustos(data, path=GUSTOS_FILE):
+    try:
+        with open(path, "w") as archivo:
+            json.dump(data, archivo, indent=4)
+    except Exception as error:
+        print("Se ha producido un error guardando gustos:", error)
 
 # =========================
 # 🧠 SERVIDOR

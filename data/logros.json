@@ -1,0 +1,104 @@
+{
+    "primer_capitulo": {
+    "nombre": "Primer Capítulo",
+    "descripcion": "📖 Mira tu primer capítulo.",
+    "rareza": "corriente"
+    },
+
+    "primer_maraton": {
+        "nombre": "Primer Maratón",
+        "descripcion": "🍿 Mira 5 capítulos seguidos.",
+        "rareza": "corriente"
+    },
+
+    "obra_maestra": {
+        "nombre": "Obra Maestra",
+        "descripcion": "⭐ Califica un anime con 5 estrellas.",
+        "rareza": "raro"
+    },
+
+    "hater_profesional": {
+        "nombre": "Hater Profesional",
+        "descripcion": "💀 Dale la peor nota posible a un anime.",
+        "rareza": "raro"
+    },
+
+    "finalista": {
+        "nombre": "Finalista",
+        "descripcion": "🏁 Termina tu primer anime.",
+        "rareza": "raro"
+    },
+
+    "recomendador": {
+        "nombre": "Recomendador Oficial",
+        "descripcion": "📢 Sugiere 10 animes.",
+        "rareza": "super_raro"
+    },
+
+    "speedrunner": {
+        "nombre": "Speedrunner",
+        "descripcion": "⚡ Mira 10 capítulos en un día.",
+        "rareza": "super_raro"
+    },
+
+    "coleccionista": {
+    "nombre": "Coleccionista",
+    "descripcion": "📚 Consigue 10 logros.",
+    "rareza": "super_raro"
+    },
+
+    "sin_dormir": {
+        "nombre": "Sin Dormir",
+        "descripcion": "🌙 Mira anime después de las 3 AM.",
+        "rareza": "super_raro"
+    },
+
+    "touch_grass": {
+        "nombre": "Touch Grass",
+        "descripcion": "🌱 Usa el bot 500 veces.",
+        "rareza": "leyenda"
+    },
+
+    "maratonista": {
+        "nombre": "Maratonista",
+        "descripcion": "🎬 Mira 50 capítulos.",
+        "rareza": "leyenda"
+    },
+
+    "critico": {
+        "nombre": "Crítico",
+        "descripcion": "📝 Vota 25 animes.",
+        "rareza": "leyenda"
+    },
+
+    "mudae_confundido": {
+        "nombre": "Servidor equivocado",
+        "descripcion": "🎭 Intentaste usar comandos de Mudae en otro bot.",
+        "rareza": "leyenda"
+    },
+
+    "flash": {
+        "nombre": "Flash!",
+        "descripcion": "⚡ Obtén menos de 50ms de ping.",
+        "rareza": "epico"
+    },
+
+    "opinion_polemica": {
+        "nombre": "Opinión Polémica",
+        "descripcion": "🔥 Tu voto difiere mucho del promedio.",
+        "rareza": "epico"
+    },
+
+    "gustos_caoticos": {
+        "nombre": "Gustos Caóticos",
+        "descripcion": "🎭 Da una puntuación mínima y máxima el mismo día.",
+        "rareza": "epico"
+    },
+
+    "el_fantasma": {
+        "nombre": "El Fantasma de César",
+        "descripcion": "👻 Usa el bot después de las 4 AM.",
+        "rareza": "epico"
+    }
+
+}

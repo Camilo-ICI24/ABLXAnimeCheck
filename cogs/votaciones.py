@@ -1,10 +1,11 @@
-import discord
 from discord.ext import commands
-from db import cargar, guardar, get_server_data
-import requests
+from datetime import datetime
+from db import cargar, guardar, get_server_data, cargar_gustos, guardar_gustos
 from cogs.utilidades import Utilidades as ut
+from logros import otorgar_logro
+import discord
+import requests
 import asyncio
-
 
 class Votaciones(commands.Cog):
     def __init__(self, bot):
@@ -160,6 +161,20 @@ class Votaciones(commands.Cog):
         return sorted(ranking, key=lambda x: x[1], reverse=True)
 
     # =========================
+    # 🗂️ TOTAL ANIMES VOTADOS
+    # =========================
+    def _total_animes_votados(self, server_data, user_id):
+        total = 0
+
+        for anime in server_data.values():
+            votos = anime.get("votos", {})
+
+            if user_id in votos:
+                total += 1
+
+        return total
+
+    # =========================
     # 🎯 EVENTO REACCIONES
     # =========================
     @commands.Cog.listener()
@@ -182,7 +197,9 @@ class Votaciones(commands.Cog):
 
         user_id = str(user.id)
 
-        self._guardar_voto(target, user_id, emoji_map[emoji])
+        voto = emoji_map[emoji]
+
+        self._guardar_voto(target, user_id, voto)
         guardar(data)
 
         await self._quitar_reaccion(reaction, user)
@@ -207,34 +224,121 @@ class Votaciones(commands.Cog):
         data, server_data = self._get_data(ctx)
 
         key = self._buscar_anime(server_data, nombre)
+
         if not key:
             return await ctx.send("❌ No existe ese anime 😢")
 
         info = server_data[key]
 
         imagen = self._obtener_imagen(key)
+
         embed = self._crear_embed_votacion(key, imagen)
 
         msg = await ctx.send(embed=embed)
+
         await self._agregar_reacciones(msg)
 
         self._inicializar_votacion(info, msg.id)
+
         guardar(data)
 
         await self._esperar_y_cerrar(ctx, key)
 
+    # Esperar y cerrar
     async def _esperar_y_cerrar(self, ctx, key):
         await asyncio.sleep(120)
         await self._cerrar_votacion(ctx, key)
 
+    # Cerrar votación
     async def _cerrar_votacion(self, ctx, key):
         data, server_data = self._get_data(ctx)
+        info = server_data[key]
+        votos = info.get("votos", {})
+        promedio = self._calcular_promedio(votos)
+
+        await self._procesar_logros_votacion(ctx, server_data, votos, promedio)
 
         self._cerrar_estado_votacion(server_data, key)
+
         guardar(data)
 
         embed_end = self._crear_embed_fin(key)
+
         await ctx.send(embed=embed_end)
+
+    # =========================
+    # 🎭 GUSTOS CAÓTICOS
+    # =========================
+    def _registrar_voto_gustos(self, guild_id, user_id, voto):
+        data = cargar_gustos()
+
+        guild_id = str(guild_id)
+        user_id = str(user_id)
+
+        hoy = datetime.now().strftime("%d/%m/%Y")
+
+        if guild_id not in data:
+            data[guild_id] = {}
+
+        if user_id not in data[guild_id]:
+            data[guild_id][user_id] = {
+                "fecha": hoy,
+                "votos": []
+            }
+
+        usuario_data = data[guild_id][user_id]
+
+        # Reiniciar si cambió el día
+        if usuario_data["fecha"] != hoy:
+            usuario_data["fecha"] = hoy
+            usuario_data["votos"] = []
+
+        usuario_data["votos"].append(voto)
+
+        guardar_gustos(data)
+
+        return usuario_data["votos"]
+
+    def _tiene_gustos_caoticos(self, votos):
+        return 1 in votos and 5 in votos
+
+    # Procesar logros votación
+    async def _procesar_logros_votacion(self, ctx, server_data, votos, promedio):
+        for uid, voto in votos.items():
+            await self._procesar_logros_usuario_votacion(ctx, server_data, uid, voto, promedio)
+
+    # Logros por usuario
+    async def _procesar_logros_usuario_votacion(self, ctx, server_data, uid, voto, promedio):
+        try:
+            miembro = await ctx.guild.fetch_member(int(uid))
+        except:
+            return
+
+        # Logro: "Obra maestra"
+        if voto == 5:
+            await otorgar_logro(ctx, "obra_maestra", usuario=miembro)
+
+        # Logro: "Hater profesional"
+        elif voto == 1:
+            await otorgar_logro(ctx, "hater_profesional", usuario=miembro)
+
+        # Logro: "Crítico"
+        total_votados = self._total_animes_votados(server_data, uid)
+
+        if total_votados >= 25:
+            await otorgar_logro(ctx, "critico", usuario=miembro)
+
+        # Logro: "Opinión polémica"
+        diferencia = abs(voto - promedio)
+
+        if diferencia >= 2:
+            await otorgar_logro(ctx, "opinion_polemica", usuario=miembro)
+
+        # Logro: "Gustos caóticos"
+        votos_de_hoy = self._registrar_voto_gustos(ctx.guild.id, uid, voto)
+
+        if self._tiene_gustos_caoticos(votos_de_hoy):
+            await otorgar_logro(ctx, "gustos_caoticos", usuario=miembro)
 
     # =========================
     # 🏆 POPULAR

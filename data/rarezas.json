@@ -1,0 +1,26 @@
+{
+    "corriente": {
+        "nombre": "Corriente",
+        "color": "grey"
+    },
+
+    "raro": {
+        "nombre": "Raro",
+        "color": "red"
+    },
+
+    "super_raro": {
+        "nombre": "Súper Raro",
+        "color": "blue"
+    },
+
+    "leyenda": {
+        "nombre": "Leyenda",
+        "color": "green"
+    },
+
+    "epico": {
+        "nombre": "Épico",
+        "color": "gold"
+    }
+}

@@ -1,9 +1,9 @@
 from discord.ext import commands
-from cogs.utilidades import Utilidades as ut
+from datetime import datetime
+from db import cargar, guardar, get_server_data
+from cogs.utilidades import Utilidades as ut, otorgar_logro
 import discord
 import requests
-from db import cargar, guardar, get_server_data
-
 
 class Anime(commands.Cog):
     def __init__(self, bot):
@@ -186,12 +186,17 @@ class Anime(commands.Cog):
 
     def _procesar_individual(self, usuarios, autor_id, capitulo, key, data):
         if autor_id not in usuarios:
-            return "❌ No estás en ese anime 😢", None
+            return "❌ No estás en ese anime 😢", None, False
 
-        usuarios[autor_id] = capitulo
+        cap_anterior, _ = self._parse_usuario(usuarios[autor_id])
+
+        self._actualizar_capitulo(usuarios, autor_id, capitulo)
+
         guardar(data)
 
-        return None, self._crear_embed_avance_individual(autor_id, capitulo, key)
+        logro_maraton = (capitulo - cap_anterior >= 5)
+
+        return None, self._crear_embed_avance_individual(autor_id, capitulo, key), logro_maraton
 
     def _procesar_multiple(self, usuarios, mencionados, capitulo, key, data):
         actualizados = []
@@ -277,6 +282,17 @@ class Anime(commands.Cog):
                 "visto": False
             }
 
+    def _total_capitulos_usuario(self, server_data, user_id):
+        total = 0
+
+        for anime in server_data.values():
+            usuarios = anime.get("usuarios", {})
+
+            if user_id in usuarios:
+                total += usuarios[user_id].get("cap", 0)
+
+        return total
+
     # =========================
     # 🎬 START ANIME
     # =========================
@@ -307,6 +323,12 @@ class Anime(commands.Cog):
                                              episodes, imagen)
 
         await ctx.send(embed=embed)
+
+        cantidad_sugeridos = sum(1 for anime in server_data.values() if anime.get("sugerido_por") 
+                                 == str(ctx.author.id))
+
+        if cantidad_sugeridos >= 10:
+            await otorgar_logro(ctx, "recomendador")
 
     # =========================
     # 👥 UNIRSE
@@ -361,6 +383,59 @@ class Anime(commands.Cog):
         await ctx.send(embed=embed)
 
     # =========================
+    # HELPERS AVANZAR
+    # =========================
+    def _obtener_delta_cap(self, usuarios, uid):
+        if uid not in usuarios:
+            return 0, 1
+
+        data = usuarios[uid]
+
+        if isinstance(data, dict):
+            return data.get("cap", 1)
+        return data
+
+    def _procesar_avance(self, usuarios, mencionados, autor_id, capitulo, key, data):
+        cap_anterior = self._obtener_delta_cap(usuarios, autor_id)
+
+        if self._es_caso_individual(mencionados, autor_id):
+            error, embed, logro_maraton = self._procesar_individual(usuarios, autor_id, 
+                                                                    capitulo, key, data)
+        else:
+            error, embed = self._procesar_multiple(usuarios, mencionados, capitulo, key, data)
+            logro_maraton = False
+
+        return error, embed, logro_maraton, cap_anterior
+
+    async def _procesar_logros_avanzar(self, ctx, logro_maraton, cap_anterior, cap_nuevo, server_data,
+                                       autor_id):
+        
+        # Logro: "Primer maratón"
+        if logro_maraton:
+            await otorgar_logro(ctx, "primer_maraton")
+
+        # Logro: "Speedrunner"
+        delta = cap_nuevo - cap_anterior
+
+        if delta >= 10:
+            await otorgar_logro(ctx, "speedrunner")
+        
+        # Logro: "Sin dormir"
+        hora_real = datetime.now().hour
+
+        if hora_real >= 3 and hora_real < 6:
+            await otorgar_logro(ctx, "sin_dormir")
+
+        # Logro: "Primer capítulo"
+        await otorgar_logro(ctx, "primer_capitulo")
+
+        # Logro: "Maratonista"
+        total_caps = self._total_capitulos_usuario(server_data, autor_id)
+
+        if total_caps >= 50:
+            await otorgar_logro(ctx, "maratonista")
+
+    # =========================
     # ⏩ AVANZAR
     # =========================
     @commands.command()
@@ -378,31 +453,26 @@ class Anime(commands.Cog):
 
         usuarios = server_data[key].get("usuarios", {})
 
-        if self._es_caso_individual(mencionados, autor_id):
-            error, embed = self._procesar_individual(
-                usuarios, autor_id, capitulo, key, data
-            )
-        else:
-            error, embed = self._procesar_multiple(
-                usuarios, mencionados, capitulo, key, data
-            )
+        error, embed, logro_maraton, cap_anterior = self._procesar_avance(usuarios, mencionados, 
+                                                                          autor_id, capitulo, key, data)
 
         if error:
             return await ctx.send(error)
 
-        # ✅ Mensaje normal de avance
+        guardar(data)
+
+        await self._procesar_logros_avanzar(ctx, logro_maraton, cap_anterior, capitulo, server_data, 
+                                            autor_id)
+
         await ctx.send(embed=embed)
 
-        # 🔥 NUEVO: evaluar progreso grupal
         adelantados, atrasados = self._detectar_desbalance(usuarios)
 
         if adelantados:
-            embed_racha = self._crear_embed_racha(key, adelantados)
-            await ctx.send(embed=embed_racha)
+            await ctx.send(embed=self._crear_embed_racha(key, adelantados))
 
         if atrasados:
-            embed_atraso = self._crear_embed_atraso(key, atrasados)
-            await ctx.send(embed=embed_atraso)
+            await ctx.send(embed=self._crear_embed_atraso(key, atrasados))
 
     # =========================
     # 🔧 HELPERS ELIMINAR
@@ -419,7 +489,6 @@ class Anime(commands.Cog):
             return None
 
         return msg.content.lower().strip() in ["sí", "si", "s", "yes", "y"]
-
 
     # =========================
     # 🧨 ELIMINAR ANIME
@@ -611,6 +680,8 @@ class Anime(commands.Cog):
 
         embed = self._crear_embed_visto(ctx, key)
         await ctx.send(embed=embed)
+
+        await otorgar_logro(ctx, "finalista")
 
 
 async def setup(bot):
