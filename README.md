@@ -27,6 +27,7 @@ Bot de Discord para gestionar animes en comunidad: seguimiento de capítulos, pr
 - 🏆 Ranking automático por popularidad  
 - 🏷️ Soporte de aliases (nombres alternativos)  
 - 🔍 Búsqueda inteligente (normalización + fuzzy match)  
+- 🏅 Sistema de logros otorgados a cada usuario
 
 ---
 
@@ -43,6 +44,7 @@ Bot de Discord para gestionar animes en comunidad: seguimiento de capítulos, pr
 - ❌ $eliminaranime "Nombre"
 - 📦 $infobot
 - 🏓 $ping
+- 🏅 $logros
 
 ---
 
@@ -57,7 +59,9 @@ El bot guarda la información por servidor en un archivo JSON (`animes_server.js
 
 Además:
 - Integra la API de **Jikan (MyAnimeList)** para obtener datos automáticamente  
-- Soporta migración de datos antiguos a nuevos formatos  
+- Soporta migración de datos antiguos a nuevos formatos 
+
+Adicionalmente, cuenta con un sistema de logros en primera fase, la cual es otorgado a cada usuario si cumple con ciertos requisitos definidos. Dichas recompensas pueden ser personalizadas para cada servidor, incluso agregando nuevos logros y tipos de rarezas para mejorar la experiencia de los usuarios.
 
 ---
 
@@ -65,10 +69,13 @@ Además:
 ```bash
 cogs/
 ├── anime.py
+├── secretos.py
+├── usobot.py
 ├── utilidades.py
 └── votaciones.py
 
 db.py
+logros.py
 main.py
 requirements.txt
 ```
@@ -110,9 +117,9 @@ python main.py
 
 Versión actual:
 
-v0.4.1 — Aftermath
+v0.5.0 — Awakening
 
-> Después del milagro… ordenar el caos.
+> El bot está despierto...y algunos usuarios también
 
 ---
 
@@ -126,5 +133,5 @@ v0.4.1 — Aftermath
 ---
 
 ## Nota final
-Este bot nació como una idea simple…
-y terminó convirtiéndose en un sistema bastante sólido.
+Le he dedicado casi la mayor parte de mi tiempo libre a este bot.
+La verad no sé qué he hecho con mi carrera a estas alturas.
