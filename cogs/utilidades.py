@@ -1,11 +1,12 @@
 from discord.ext import commands
+from datetime import datetime
 from difflib import get_close_matches as gcm
 from logros import (obtener_logros, otorgar_logro, cargar_logros, calcular_estadisticas, 
                     LOGROS, RAREZAS, COLORES)
 import discord
 import re
+import json
 import unicodedata as ucd
-
 
 class Utilidades(commands.Cog):
     def __init__(self, bot):
@@ -658,6 +659,25 @@ class Utilidades(commands.Cog):
             "secreto":
             "???"
         }
+
+# Método para logro fantasma
+def fantasma_servidor(data, guild_id):
+    hora = datetime.now().hour
+
+    if hora < 4 or hora >= 6:
+        return False
+
+    guild_id = str(guild_id)
+    hoy = datetime.now().strftime("%d/%m/%Y")
+
+    guild_data = data.setdefault(guild_id, {})
+    fantasma = guild_data.setdefault("fantasma", {})
+
+    if fantasma.get("fecha") == hoy:
+        return False
+
+    fantasma["fecha"] = hoy
+    return True
 
 
 async def setup(bot):

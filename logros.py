@@ -3,7 +3,7 @@ import discord
 import json
 
 # ==================================================
-# CARGAR JSONS
+# CARGAR DATOS BASE
 # ==================================================
 
 with open("data/logros.json", "r", encoding="utf-8") as archivo:
@@ -11,10 +11,6 @@ with open("data/logros.json", "r", encoding="utf-8") as archivo:
 
 with open("data/rarezas.json", "r", encoding="utf-8") as archivo:
     RAREZAS = json.load(archivo)
-
-# ==================================================
-# COLORES DISCORD
-# ==================================================
 
 COLORES = {
     "gold": discord.Color.gold(),
@@ -25,25 +21,22 @@ COLORES = {
 }
 
 # ==================================================
-# CARGAR / GUARDAR JSON
+# ARCHIVO DE LOGROS DEL SERVIDOR
 # ==================================================
 
 def cargar_logros():
-
     try:
-        with open("data/logros_server.json", "r", encoding="utf-8") as archivo:
-            return json.load(archivo)
-
+        with open("data/logros_server.json", "r", encoding="utf-8") as f:
+            return json.load(f)
     except FileNotFoundError:
         return {}
 
 def guardar_logros(data):
-
-    with open("data/logros_server.json", "w", encoding="utf-8") as archivo:
-        json.dump(data, archivo, indent=4, ensure_ascii=False)
+    with open("data/logros_server.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
 
 # ==================================================
-# HELPERS
+# HELPERS BASE
 # ==================================================
 
 def crear_servidor(data, server_id):
@@ -52,72 +45,38 @@ def crear_servidor(data, server_id):
 
 def crear_usuario(data, server_id, user_id):
     if user_id not in data[server_id]:
-        data[server_id][user_id] = {
-            "achievements": {}
-        }
+        data[server_id][user_id] = {"achievements": {}}
 
 def guardar_logro(data, server_id, user_id, logro_id):
-    fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
+    fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
 
     data[server_id][user_id]["achievements"][logro_id] = {
-        "fecha": fecha_actual
-    }
-
-    guardar_logros(data)
-
-# ==================================================
-# ESTADÍSTICAS
-# ==================================================
-
-def calcular_estadisticas(data, server_id, logro_id):
-    usuarios_con_logro = 0
-    ultimo_dia = 0
-
-    server_data = data.get(server_id, {})
-
-    for datos_usuario in server_data.values():
-        if logro_id in datos_usuario["achievements"]:
-            usuarios_con_logro += 1
-            fecha_logro = datetime.strptime(datos_usuario["achievements"][logro_id]["fecha"],
-                "%d/%m/%Y %H:%M"
-            )
-
-            if datetime.now() - fecha_logro <= timedelta(hours=24):
-                ultimo_dia += 1
-
-    total_usuarios = len(server_data)
-
-    porcentaje = 0
-
-    if total_usuarios > 0:
-
-        porcentaje = usuarios_con_logro / total_usuarios * 100
-
-    return {
-        "usuarios": usuarios_con_logro,
-        "porcentaje": porcentaje,
-        "ultimo_dia": ultimo_dia
+        "fecha": fecha
     }
 
 # ==================================================
-# CREAR EMBED
+# VALIDACIONES
+# ==================================================
+
+def logro_existe(logro_id):
+    return logro_id in LOGROS
+
+def ya_tiene_logro(data, server_id, user_id, logro_id):
+    return logro_id in data[server_id][user_id]["achievements"]
+
+# ==================================================
+# EMBED
 # ==================================================
 
 def crear_embed_logro(ctx, logro, usuario):
-    rareza = RAREZAS.get(logro["rareza"])
+    rareza = RAREZAS.get(logro["rareza"], {"color": "grey"})
 
-    if rareza is None:
-        rareza = { "color": "grey" }
-
-    color_embed = COLORES.get(
-        rareza["color"],
-        discord.Color.light_grey()
-    )
+    color = COLORES.get(rareza["color"], discord.Color.light_grey())
 
     embed = discord.Embed(
         title="🏆 ¡Nuevo logro desbloqueado!",
-        description=(f"{usuario.mention} obtuvo el logro " f"**{logro['nombre']}**"),
-        color=color_embed
+        description=f"{usuario.mention} obtuvo **{logro['nombre']}**",
+        color=color
     )
 
     embed.set_thumbnail(url=usuario.display_avatar.url)
@@ -125,14 +84,24 @@ def crear_embed_logro(ctx, logro, usuario):
     return embed
 
 # ==================================================
-# OTORGAR LOGRO
+# LOGROS ESPECIALES
+# ==================================================
+
+def evaluar_logros_especiales(data, server_id, user_id, otorgador):
+    logros = data[server_id][user_id]["achievements"]
+
+    # 🏆 Coleccionista
+    if len(logros) >= 10 and "coleccionista" not in logros:
+        otorgador(data, server_id, user_id, "coleccionista")
+
+# ==================================================
+# FUNCIÓN PRINCIPAL
 # ==================================================
 
 async def otorgar_logro(ctx, logro_id, usuario=None):
-    if usuario is None:
-        usuario = ctx.author
+    usuario = usuario or ctx.author
 
-    if logro_id not in LOGROS:
+    if not logro_existe(logro_id):
         return False
 
     data = cargar_logros()
@@ -141,24 +110,32 @@ async def otorgar_logro(ctx, logro_id, usuario=None):
     user_id = str(usuario.id)
 
     crear_servidor(data, server_id)
-
     crear_usuario(data, server_id, user_id)
 
-    if logro_id in data[server_id][user_id]["achievements"]:
+    if ya_tiene_logro(data, server_id, user_id, logro_id):
         return False
-
-    logro = LOGROS[logro_id]
 
     guardar_logro(data, server_id, user_id, logro_id)
 
+    def otorgador(data, server_id, user_id, logro_id_extra):
+        if logro_id_extra in data[server_id][user_id]["achievements"]:
+            return
+
+        guardar_logro(data, server_id, user_id, logro_id_extra)
+
+    evaluar_logros_especiales(data, server_id, user_id, otorgador)
+
+    logro = LOGROS[logro_id]
     embed = crear_embed_logro(ctx, logro, usuario)
 
     await ctx.send(embed=embed)
 
+    guardar_logros(data)
+
     return True
 
 # ==================================================
-# TIENE LOGRO
+# CONSULTAS
 # ==================================================
 
 def tiene_logro(server_id, user_id, logro_id):
@@ -167,20 +144,11 @@ def tiene_logro(server_id, user_id, logro_id):
     server_id = str(server_id)
     user_id = str(user_id)
 
-    if server_id not in data:
-        return False
-
-    if user_id not in data[server_id]:
-        return False
-
     return (
-        logro_id
-        in data[server_id][user_id]["achievements"]
+        server_id in data and
+        user_id in data[server_id] and
+        logro_id in data[server_id][user_id]["achievements"]
     )
-
-# ==================================================
-# OBTENER LOGROS
-# ==================================================
 
 def obtener_logros(server_id, user_id):
     data = cargar_logros()
@@ -195,3 +163,44 @@ def obtener_logros(server_id, user_id):
         return {}
 
     return data[server_id][user_id]["achievements"]
+
+# ==================================================
+# ESTADÍSTICAS
+# ==================================================
+
+def calcular_estadisticas(data, server_id, logro_id):
+    usuarios_con_logro = 0
+    ultimo_dia = 0
+
+    server_data = data.get(server_id, {})
+
+    for datos_usuario in server_data.values():
+
+        achievements = datos_usuario.get("achievements", {})
+
+        if logro_id in achievements:
+
+            usuarios_con_logro += 1
+
+            fecha = achievements[logro_id]["fecha"]
+
+            fecha_logro = datetime.strptime(
+                fecha,
+                "%d/%m/%Y %H:%M"
+            )
+
+            if datetime.now() - fecha_logro <= timedelta(hours=24):
+                ultimo_dia += 1
+
+    total_usuarios = len(server_data)
+
+    porcentaje = 0
+
+    if total_usuarios > 0:
+        porcentaje = usuarios_con_logro / total_usuarios * 100
+
+    return {
+        "usuarios": usuarios_con_logro,
+        "porcentaje": porcentaje,
+        "ultimo_dia": ultimo_dia
+    }
