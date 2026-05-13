@@ -287,14 +287,14 @@ class Utilidades(commands.Cog):
         embed.add_field(
             name="🆕 Novedades",
             value=(
-                "• Nuevo comando $alias para asociar nombres alternativos a animes\n"
-                "• Nuevo comando $visto para marcar animes como completados ✅\n"
+                "• Sistema de logros implementado - Primera versión\n"
+                "• Dockerización para despliegue sencillo\n"
             ),
             inline=False
         )
 
     def _agregar_seccion_metadata(self, embed):
-        embed.add_field(name="🧪 Versión", value="v2026-04-23(beta)", inline=True)
+        embed.add_field(name="🧪 Versión", value="v2026-05-13(beta)", inline=True)
         embed.add_field(
             name="📦 Repositorio",
             value="[GitHub](https://github.com/Camilo-ICI24/ABLXAnimeCheck.git)",
