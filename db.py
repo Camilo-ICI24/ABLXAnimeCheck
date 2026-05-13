@@ -1,7 +1,7 @@
 import json
 import os
 
-DB_FILE = "animes_server.json"
+DB_FILE = "data/animes_server.json"
 USO_FILE = "data/uso_server.json"
 GUSTOS_FILE = "data/gustos_server.json"
 
