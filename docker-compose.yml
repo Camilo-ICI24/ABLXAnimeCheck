@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  ablx-bot:
+    build: .
+    container_name: ablx-bot
+
+    volumes:
+      - ./data:/app/data
+
+    restart: unless-stopped
+
+    environment:
+      - PYTHONUNBUFFERED=1
