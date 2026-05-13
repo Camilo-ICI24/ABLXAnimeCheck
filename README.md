@@ -10,7 +10,8 @@ Bot de Discord para gestionar animes en comunidad: seguimiento de capítulos, pr
 - [Comandos principales](#-comandos-principales)
 - [Funcionamiento del bot](#funcionamiento-del-bot)
 - [Estructura del proyecto](#estructura-del-proyecto)
-- [Instalación](#instalación)
+- [Requisitos](#requisitos)
+- [Ejecución del bot](#-ejecución-del-bot)
 - [Estado del proyecto](#estado-del-proyecto)
 - [Mejoras a futuro](#mejoras-a-futuro)
 - [Nota final](#nota-final)
@@ -63,6 +64,8 @@ Además:
 
 Adicionalmente, cuenta con un sistema de logros en primera fase, la cual es otorgado a cada usuario si cumple con ciertos requisitos definidos. Dichas recompensas pueden ser personalizadas para cada servidor, incluso agregando nuevos logros y tipos de rarezas para mejorar la experiencia de los usuarios.
 
+El bot cuenta con funcionamiento híbrido, pudiendo iniciarse desde el archivo principal ```main.py``` en la consola, o mediante el Docker Compose, utilizando la imagen creada para un funcionamiento permanente, asegurando integridad de los datos almacenados en los archivos JSON durante la ejecución, gracias al uso de volúmenes persistentes.
+
 ---
 
 ## Estructura del proyecto
@@ -78,10 +81,26 @@ db.py
 logros.py
 main.py
 requirements.txt
+Dockerfile
+docker-compose.yml
 ```
 ---
 
-## Instalación
+## Requisitos
+
+- Python 3.12+ (ejecución local)
+- Docker + Docker Compose (ejecución mediante contenedores)
+
+---
+
+## 🚀 Ejecución del bot
+
+Este proyecto soporta dos formas de ejecución:
+
+- 🐍 Ejecución local (Python)
+- 🐳 Ejecución con Docker (recomendado)
+
+### Ejecución con Python
 
 ### 1. Clonar repositorio
 ```bash
@@ -106,22 +125,32 @@ Crea un archivo -env o configúralo dentro del código
 DISCORD_TOKEN=token_personal_de_discord
 ```
 
-### 5. Ejecutar
-```bash
-python main.py
-```
+---
 
+### 🐳 Ejecución con Docker
+
+```bash
+# Construir y ejecutar
+docker compose up --build
+
+# Ejecutar en segundo plano
+docker compose up -d
+
+# Detener contenedores
+docker compose down
+
+# Ver logs
+docker compose logs -f
+```
 ---
 
 ## Estado del proyecto
 
 Versión actual:
 
-v0.5.0 — Awakening
+v0.5.0 — Requiem
 
-> El bot está despierto...y algunos usuarios también
-
----
+> El sistema despierta… y los animes no se olvidan.
 
 ## Mejoras a futuro
 
