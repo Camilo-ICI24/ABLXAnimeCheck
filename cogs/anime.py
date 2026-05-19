@@ -1,7 +1,7 @@
 from discord.ext import commands
 from datetime import datetime
 from db import cargar, guardar, get_server_data
-from cogs.utilidades import Utilidades as ut, otorgar_logro
+from cogs.utilidades import Utilidades as ut, otorgar_logro, hora_chile
 import discord
 import requests
 
@@ -421,7 +421,9 @@ class Anime(commands.Cog):
             await otorgar_logro(ctx, "speedrunner")
         
         # Logro: "Sin dormir"
-        hora_real = datetime.now().hour
+        hora_chilena = hora_chile().hour
+
+        hora_real = hora_chile.hour
 
         if hora_real >= 3 and hora_real < 6:
             await otorgar_logro(ctx, "sin_dormir")
