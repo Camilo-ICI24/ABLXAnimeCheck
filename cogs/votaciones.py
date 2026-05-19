@@ -223,6 +223,12 @@ class Votaciones(commands.Cog):
     async def votar(self, ctx, *, nombre):
         data, server_data = self._get_data(ctx)
 
+        # =========================
+        # 🚫 YA EXISTE VOTACIÓN
+        # =========================
+        if self._hay_votacion_activa(server_data):
+            return await ctx.send("⏳ Ya hay una votación en curso 😢")
+
         key = self._buscar_anime(server_data, nombre)
 
         if not key:
@@ -339,6 +345,13 @@ class Votaciones(commands.Cog):
 
         if self._tiene_gustos_caoticos(votos_de_hoy):
             await otorgar_logro(ctx, "gustos_caoticos", usuario=miembro)
+
+    def _hay_votacion_activa(self, server_data):
+        for info in server_data.values():
+            if info.get("votacion_activa", False):
+                return True
+
+        return False
 
     # =========================
     # 🏆 POPULAR

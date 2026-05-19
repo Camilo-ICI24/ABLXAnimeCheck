@@ -42,7 +42,9 @@ class Secret(commands.Cog):
             "🐭 ¡Topo Gigia, es tu frase!",
             "🧴 Para echarnos cloro",
             "💪 ¿¡Por qué cada vez estoy más mamada!?",
-            "⚫ ¿Quién es esta negra? Te llamaré \"Grafita\""
+            "⚫ ¿Quién es esta negra? Te llamaré \"Grafita\"",
+            "👽 ¡Por fin quedó como una lanza!, ¡ya no parece un dildo alienígena!",
+            "🤬 ¡Así de chata me tienes! ¡¡ASÍ DE CHATA ME TIENES!!"
         ]
 
     def _elegir_frase(self):

@@ -7,6 +7,7 @@ import discord
 import re
 import json
 import unicodedata as ucd
+import pytz
 
 class Utilidades(commands.Cog):
     def __init__(self, bot):
@@ -660,15 +661,23 @@ class Utilidades(commands.Cog):
             "???"
         }
 
+# Zona horaria Chile
+def hora_chile():
+    zona = pytz.timezone("America/Santiago")
+    return datetime.now(zona)
+
 # Método para logro fantasma
 def fantasma_servidor(data, guild_id):
-    hora = datetime.now().hour
+
+    hora_chilena = hora_chile()
+
+    hora = hora_chilena.hour
 
     if hora < 4 or hora >= 6:
         return False
 
     guild_id = str(guild_id)
-    hoy = datetime.now().strftime("%d/%m/%Y")
+    hoy = hora_chilena.strftime("%d/%m/%Y")
 
     guild_data = data.setdefault(guild_id, {})
     fantasma = guild_data.setdefault("fantasma", {})
