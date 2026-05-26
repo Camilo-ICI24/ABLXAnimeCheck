@@ -62,8 +62,95 @@ class Anime(commands.Cog):
         return False
 
     # =========================
-    # 🔧 STARTANIME
+    # 🔧 HELPERS STARTANIME
     # =========================
+
+    def _obtener_total_anime(self, mal_id):
+        episodios_totales = 0
+        temporadas = 0
+
+        actual_id = mal_id
+        visitados = set()
+
+        while self._anime_no_visitado(actual_id, visitados):
+            visitados.add(actual_id)
+
+            anime_data = self._obtener_anime(actual_id)
+
+            titulo_original = anime_data.get("title", "")
+
+            if anime_data.get("type") == "TV":
+                episodios_totales += self._obtener_episodios(anime_data)
+
+            temporadas += 1
+
+            actual_id = self._obtener_secuela(actual_id, titulo_original)
+
+        return {
+            "episodes": episodios_totales,
+            "temporadas": temporadas
+        }
+
+    def _anime_no_visitado(self, actual_id, visitados):
+        return actual_id and actual_id not in visitados
+
+    def _obtener_episodios(self, anime_data):
+        return anime_data.get("episodes") or 0
+
+    def _obtener_anime(self, mal_id):
+        solicitud = requests.get(f"https://api.jikan.moe/v4/anime/{mal_id}")
+
+        return solicitud.json()["data"]
+    
+    def _obtener_relaciones(self, mal_id):
+        solicitud = requests.get(f"https://api.jikan.moe/v4/anime/{mal_id}/relations")
+
+        return solicitud.json()["data"]
+
+    def _obtener_secuela(self, mal_id, titulo_original):
+        relaciones = self._obtener_relaciones(mal_id)
+
+        for relacion in relaciones:
+
+            if relacion["relation"] != "Sequel":
+                continue
+
+            for entry in relacion["entry"]:
+
+                if entry["type"] != "anime":
+                    continue
+
+                nombre = entry["name"]
+
+                if self._es_temporada_directa(titulo_original, nombre):
+                    return entry["mal_id"]
+
+        return None
+
+    def _es_temporada_directa(self, titulo_original, titulo_secuela):
+        original = titulo_original.lower()
+        secuela = titulo_secuela.lower()
+
+        # Debe compartir gran parte del nombre
+        if original.split(":")[0].strip() not in secuela:
+            return False
+
+        patrones_temporada = [
+            "2nd season",
+            "3rd season",
+            "4th season",
+            "5th season",
+            "season 2",
+            "season 3",
+            "season 4",
+            "part 2",
+            "part 3",
+            "part 4",
+            "final season"
+        ]
+
+        return any(p in secuela for p in patrones_temporada)
+
     def _validar_startanime(self, ctx, args):
         if '"' not in args:
             return '⚠️ Usa: $startanime "Nombre" @usuario'
@@ -82,6 +169,37 @@ class Anime(commands.Cog):
             if f"<@{u.id}>" in contenido else 999999
         )
 
+    def _buscar_anime_jikan(self, nombre):
+        res = requests.get(f"https://api.jikan.moe/v4/anime?q={nombre}&limit=1")
+
+        data_api = res.json().get("data", [])
+
+        if not data_api:
+            return None
+
+        return data_api[0]
+
+    def _extraer_imagen(self, anime):
+        return anime["images"]["jpg"]["image_url"]
+    
+    def _extraer_status(self, anime):
+        return anime.get("status", "desconocido")
+
+    def _extraer_episodios(self, anime):
+        return anime.get("episodes")
+
+    def _agregar_aliases_base(self, aliases, anime, nombre):
+        aliases.add(anime.get("title", nombre))
+
+        aliases.add(anime.get("title_english", ""))
+
+        aliases.add(anime.get("title_japanese", ""))
+
+    def _agregar_aliases_titulos(self, aliases, anime):
+        for titulo in anime.get("titles", []):
+            if titulo.get("title"):
+                aliases.add(titulo["title"])
+
     def _fetch_anime_data(self, nombre):
         imagen = None
         status = "desconocido"
@@ -89,22 +207,20 @@ class Anime(commands.Cog):
         aliases = set()
 
         try:
-            res = requests.get(f"https://api.jikan.moe/v4/anime?q={nombre}&limit=1")
-            data_api = res.json().get("data", [])
+            anime = self._buscar_anime_jikan(nombre)
 
-            if data_api:
-                anime = data_api[0]
-                imagen = anime["images"]["jpg"]["image_url"]
-                status = anime.get("status", "desconocido")
-                episodes = anime.get("episodes")
+            if anime:
+                imagen = self._extraer_imagen(anime)
+                status = self._extraer_status(anime)
 
-                aliases.add(anime.get("title", nombre))
-                aliases.add(anime.get("title_english", ""))
-                aliases.add(anime.get("title_japanese", ""))
+                mal_id = anime.get("mal_id")
+                franquicia = self._obtener_total_anime(mal_id)
+                print("TOTAL:", franquicia)
+                episodes = franquicia["episodes"]
 
-                for t in anime.get("titles", []):
-                    if t.get("title"):
-                        aliases.add(t["title"])
+                self._agregar_aliases_base(aliases, anime, nombre)
+                self._agregar_aliases_titulos(aliases, anime)
+
         except:
             aliases.add(nombre)
 
