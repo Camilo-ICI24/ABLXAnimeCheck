@@ -523,9 +523,9 @@ class Anime(commands.Cog):
 
         return error, embed, logro_maraton, cap_anterior
 
-    async def _procesar_logros_avanzar(self, ctx, logro_maraton, cap_anterior, cap_nuevo, server_data,
+    async def _procesar_logros_avanzar(self, ctx, logro_maraton, cap_anterior, cap_nuevo, server_data, 
                                        autor_id):
-        
+
         # Logro: "Primer maratón"
         if logro_maraton:
             await otorgar_logro(ctx, "primer_maraton")
@@ -535,13 +535,11 @@ class Anime(commands.Cog):
 
         if delta >= 10:
             await otorgar_logro(ctx, "speedrunner")
-        
+
         # Logro: "Sin dormir"
-        hora_chilena = hora_chile().hour
+        hora_real = hora_chile().hour
 
-        hora_real = hora_chile.hour
-
-        if hora_real >= 3 and hora_real < 6:
+        if 3 <= hora_real < 6:
             await otorgar_logro(ctx, "sin_dormir")
 
         # Logro: "Primer capítulo"
@@ -775,6 +773,31 @@ class Anime(commands.Cog):
         embed = self._crear_embed_alias(key, agregados)
         await ctx.send(embed=embed)
 
+    # ========================
+    # 🔧 HELPERS VISTO
+    # ========================
+
+    def _obtener_cap_actual(self, usuarios, uid):
+        usuario_data = usuarios[uid]
+
+        if isinstance(usuario_data, dict):
+            return usuario_data.get("cap", 1)
+
+        return usuario_data
+
+    def _obtener_episodios_totales(self, info):
+        return info.get("episodes")
+
+    def _puede_marcar_visto(self, cap_actual, episodios_totales):
+        if not episodios_totales:
+            return False
+
+        return cap_actual >= episodios_totales
+
+    def _crear_mensaje_no_terminado(self, key, cap_actual, episodios_totales):
+        return (f"❌ Aún no terminas **{key}**\n"
+        f"📺 Vas en el capítulo **{cap_actual}/{episodios_totales}**")
+
     # =========================
     # 🏁 VISTO
     # =========================
@@ -787,16 +810,30 @@ class Anime(commands.Cog):
         if not key:
             return await ctx.send("❌ No existe ese anime 😢")
 
-        usuarios = server_data[key].get("usuarios", {})
+        info = server_data[key]
+
+        usuarios = info.get("usuarios", {})
         uid = str(ctx.author.id)
 
         if uid not in usuarios:
             return await ctx.send("❌ No estás en ese anime 😢")
 
+        cap_actual = self._obtener_cap_actual(usuarios, uid)
+
+        episodios_totales = self._obtener_episodios_totales(info)
+
+        if not episodios_totales:
+            return await ctx.send("⚠️ Este anime no tiene cantidad de episodios registrada 😢")
+
+        if not self._puede_marcar_visto(cap_actual, episodios_totales):
+            return await ctx.send(self._crear_mensaje_no_terminado(key, cap_actual, episodios_totales))
+
         self._marcar_visto(usuarios, uid)
+
         guardar(data)
 
         embed = self._crear_embed_visto(ctx, key)
+
         await ctx.send(embed=embed)
 
         await otorgar_logro(ctx, "finalista")
