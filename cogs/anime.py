@@ -41,10 +41,24 @@ class Anime(commands.Cog):
     def _formatear_progreso(self, usuarios):
         if not usuarios:
             return "Nadie viendo aún"
-        return "\n".join(
-            self._formatear_usuario(uid, data)
-            for uid, data in usuarios.items()
-        )
+
+        ordenados = self._ordenar_por_progreso(usuarios)
+
+        texto = []
+
+        for uid, _ in ordenados:
+            data = usuarios[uid]
+
+            cap, visto = self._parse_usuario(data)
+
+            linea = f"👤 <@{uid}> → Cap {cap}"
+
+            if visto:
+                linea += " ✅"
+
+            texto.append(linea)
+
+        return "\n".join(texto)
 
     def _marcar_visto(self, usuarios, uid):
         if isinstance(usuarios[uid], dict):
@@ -489,7 +503,8 @@ class Anime(commands.Cog):
         embed = self._crear_embed_verinfo(key)
 
         embed.add_field(name="👤 Sugerido por", value=f"<@{info.get('sugerido_por')}>", inline=False)
-        embed.add_field(name="📖 Progreso de usuarios", value=self._formatear_progreso(usuarios), inline=False)
+        embed.add_field(name="📖 Progreso de usuarios", value=self._formatear_progreso(usuarios), 
+                        inline=False)
         embed.add_field(name="👥 Viendo", value=str(len(usuarios)), inline=True)
         embed.add_field(name="📌 Capítulo base", value=str(info.get("capitulo", 1)), inline=True)
 
