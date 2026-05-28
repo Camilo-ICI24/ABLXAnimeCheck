@@ -1,0 +1,39 @@
+def formatear_menciones(self, usuarios):
+    if not usuarios:
+        return "Nadie viendo aún"
+
+    return "\n".join(formatear_usuario(uid, data) for uid, data in usuarios.items())
+
+def formatear_usuario(uid, data):
+    cap, visto = extraer_estado_usuario(data)
+
+    texto = f"👤 <@{uid}> → Cap {cap}"
+    if visto:
+        texto += " ✅"
+
+    return texto
+
+def extraer_estado_usuario(data):
+    if isinstance(data, dict):
+        return data.get("cap", 1), data.get("visto", False)
+    return data, False
+
+def normalizar_usuarios(usuarios, cap):
+    nuevos = {}
+
+    for uid, data in usuarios.items():
+        nuevos[uid] = normalizar_usuario_individual(data, cap)
+
+    return nuevos
+
+def normalizar_usuario_individual(data, cap):
+    if isinstance(data, dict):
+        return {
+            "cap": data.get("cap", cap),
+            "visto": data.get("visto", False)
+        }
+    
+    return {
+        "cap": data,
+        "visto": False
+    }

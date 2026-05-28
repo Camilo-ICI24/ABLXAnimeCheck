@@ -2,10 +2,11 @@ from .anime_progreso import obtener_delta_cap, detectar_desbalance
 from .anime_users import parse_usuario, actualizar_capitulo
 from .anime_embeds import (crear_embed_avance_individual, crear_embed_avance_multiple, 
                            crear_embed_racha, crear_embed_atraso)
+from cogs.utilidades.core.logros.logros_service import otorgar_logro
+from cogs.utilidades.core.zona_horaria import hora_chile
 from db import guardar
-from cogs.utilidades import otorgar_logro, hora_chile
 
-def procesar_avance(self, usuarios, mencionados, autor_id, capitulo, key, data):
+def procesar_avance(usuarios, mencionados, autor_id, capitulo, key, data):
     cap_anterior = obtener_delta_cap(usuarios, autor_id)
 
     if es_caso_individual(mencionados, autor_id):

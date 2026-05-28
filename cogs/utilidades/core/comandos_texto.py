@@ -1,0 +1,23 @@
+def texto_comandos():
+    return (
+        "📜 **Comandos disponibles:**\n\n"
+        "🎬 $startanime \"Nombre\" @sugeridor @usuario_n\n"
+        "👥 $unirse Nombre\n"
+        "🔍 $verinfo Nombre\n"
+        "⏩ $avanzar <capitulo> Nombre\n"
+        "📋 $lista\n"
+        "📊 $votar Nombre\n"
+        "🏆 $popular\n"
+        "✏️ $renombrar \"Nombre actual\" \"Nombre nuevo\"\n"
+        "🏷️ $alias \"Nombre\" \"alias1\" \"alias2\" ...\n"
+        "✅ $visto \"Nombre\"\n"
+        "🏁 $end Nombre\n"
+        "❌ $eliminaranime \"Nombre\"\n"
+        "⏳ $progreso Nombre\n"
+        "❓ $guia Comando\n"
+        "📦 $infobot\n"
+        "🏓 $ping\n"
+        "🤫 $secreto\n"
+        "🏅 $logros @usuario\n"
+        "💡 Prefijos: $"
+    )

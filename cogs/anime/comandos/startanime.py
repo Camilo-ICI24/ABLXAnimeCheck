@@ -4,8 +4,8 @@ from cogs.anime.core.anime_api import fetch_anime_data
 from cogs.anime.core.anime_embeds import crear_embed_startanime
 from cogs.anime.core.anime_repository import get_data
 from cogs.anime.core.anime_service import guardar_anime
+from cogs.utilidades.core.logros.logros_service import otorgar_logro
 from db import guardar
-from cogs.utilidades import otorgar_logro
 
 
 class StartAnime(commands.Cog):
@@ -18,7 +18,6 @@ class StartAnime(commands.Cog):
     # =========================
     @commands.command()
     async def startanime(self, ctx, *, args):
-
         data, server_data = get_data(ctx)
 
         error = validar_startanime(ctx, args)
