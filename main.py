@@ -37,7 +37,9 @@ EXTENSIONES = [
     "cogs.utilidades.comandos.logros",
     "cogs.utilidades.comandos.ha",
     "cogs.utilidades.comandos.ping",
-    "cogs.utilidades.comandos.lista"
+    "cogs.utilidades.comandos.lista",
+    "cogs.utilidades.comandos.secreto",
+    "cogs.utilidades.estadisticas"
 ]
 
 # =========================

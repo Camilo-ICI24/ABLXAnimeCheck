@@ -114,3 +114,12 @@ def crear_embed_logros(index, logros_lista, usuario, data, server_id):
     embed.set_footer(text=f"Logro {index+1}/{len(logros_lista)}")
 
     return embed
+
+def crear_embed_frase(frase):
+        embed = discord.Embed(
+            title="🤫 Secreto del grupo",
+            description=frase,
+            color=0x8e44ad
+        )
+
+        return embed
