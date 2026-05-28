@@ -14,13 +14,24 @@ bot = commands.Bot(
 )
 
 # =========================
-# 🚀 CARGA DE COGS (MODERNO)
+# 🚀 CARGA RECURSIVA DE COGS
 # =========================
 @bot.event
 async def setup_hook():
-    for file in os.listdir("./cogs"):
-        if file.endswith(".py"):
-            await bot.load_extension(f"cogs.{file[:-3]}")
+
+    extensiones = [
+        "cogs.anime.comandos.startanime",
+        "cogs.anime.comandos.avanzar",
+        "cogs.anime.comandos.alias",
+        "cogs.anime.comandos.eliminaranime",
+        "cogs.anime.comandos.progreso",
+        "cogs.anime.comandos.unirse",
+        "cogs.anime.comandos.verinfo",
+        "cogs.anime.comandos.visto",
+    ]
+
+    for extension in extensiones:
+        await bot.load_extension(extension)
 
 # =========================
 # 🔌 READY
