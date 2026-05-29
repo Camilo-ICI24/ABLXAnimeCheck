@@ -9,7 +9,7 @@ FRASES_SECRETAS = [
     "⚡ Se ve así porque tuvo que rezar",
     "🍷 ¿Ella está bien? ¿No la pegaron mal? ¿Ésto ustedes lo consideran sano?",
     "🫡 Chicos se me pegó el PC",
-    "🐉 \"¿Alguien levantan\"? ¿Leviatan?",
+    "🐉 ¿\"Alguien levantan\"? ¿Leviatan?",
     "❤️ ¡Ah bueno! ¡Están tal para cual! ¡\"Robo en ban\" y \"Alguien levantan\"!",
     "🤢 Amiga esto parece un pan sin cocer",
     "🔪 ¡¡AAARGH!!, ¡me quiero cortar una teta!",
