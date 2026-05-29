@@ -43,6 +43,7 @@ Bot de Discord para gestionar animes en comunidad: seguimiento de capítulos, pr
 - 🏷️ $alias "Nombre" "alias1" ... 
 - ✅ $visto "Nombre"
 - ❌ $eliminaranime "Nombre"
+- ✏️ $renombrar \"Nombre actual\" \"Nombre nuevo\"\n"
 - 📦 $infobot
 - 🏓 $ping
 - 🏅 $logros
@@ -70,19 +71,115 @@ El bot cuenta con funcionamiento híbrido, pudiendo iniciarse desde el archivo p
 
 ## Estructura del proyecto
 ```bash
-cogs/
-├── anime.py
-├── secretos.py
-├── usobot.py
-├── utilidades.py
-└── votaciones.py
+├── cogs
+│   ├── anime
+│   │   ├── anime.py
+│   │   ├── comandos
+│   │   │   ├── alias.py
+│   │   │   ├── avanzar.py
+│   │   │   ├── eliminaranime.py
+│   │   │   ├── __init__.py
+│   │   │   ├── progreso.py
+│   │   │   ├── renombrar.py
+│   │   │   ├── startanime.py
+│   │   │   ├── unirse.py
+│   │   │   ├── verinfo.py
+│   │   │   └── visto.py
+│   │   ├── core
+│   │   │   ├── anime_alias.py
+│   │   │   ├── anime_api.py
+│   │   │   ├── anime_embeds.py
+│   │   │   ├── anime_progreso.py
+│   │   │   ├── anime_repository.py
+│   │   │   ├── anime_service.py
+│   │   │   ├── anime_users.py
+│   │   │   ├── anime_visto.py
+│   │   │   ├── __init__.py
+│   │   │   └── renombrar
+│   │   │       ├── __init__.py
+│   │   │       ├── renombrar_embeds.py
+│   │   │       ├── renombrar_repository.py
+│   │   │       ├── renombrar_service.py
+│   │   │       └── renombrar_validaciones.py
+│   │   ├── __init__.py
+│   │   └── utils
+│   │       ├── eliminaranime_utils.py
+│   │       ├── __init__.py
+│   │       └── startanime_utils.py
+│   ├── __init__.py
+│   ├── utilidades
+│   │   ├── comandos
+│   │   │   ├── comandos.py
+│   │   │   ├── guia.py
+│   │   │   ├── ha.py
+│   │   │   ├── infobot.py
+│   │   │   ├── __init__.py
+│   │   │   ├── lista.py
+│   │   │   ├── logros.py
+│   │   │   ├── ping.py
+│   │   │   └── secreto.py
+│   │   ├── core
+│   │   │   ├── anime_search.py
+│   │   │   ├── comandos_texto.py
+│   │   │   ├── embeds.py
+│   │   │   ├── estadisticas_helpers.py
+│   │   │   ├── guia_helpers.py
+│   │   │   ├── __init__.py
+│   │   │   ├── lista_helpers.py
+│   │   │   ├── logros
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── logros_cargar.py
+│   │   │   │   ├── logros_data.py
+│   │   │   │   ├── logros_embeds.py
+│   │   │   │   ├── logros_estados.py
+│   │   │   │   ├── logros_helpers.py
+│   │   │   │   ├── logros_paginacion.py
+│   │   │   │   └── logros_service.py
+│   │   │   ├── normalizacion.py
+│   │   │   ├── paginacion.py
+│   │   │   ├── progreso_helpers.py
+│   │   │   ├── secretos
+│   │   │   │   ├── secretos_frases.py
+│   │   │   │   └── secretos_utils.py
+│   │   │   └── zona_horaria.py
+│   │   ├── estadisticas.py
+│   │   ├── __init__.py
+│   │   └── utilidades.py
+│   └── votaciones
+│       ├── comandos
+│       │   ├── __init__.py
+│       │   ├── popular.py
+│       │   └── votar.py
+│       ├── core
+│       │   ├── __init__.py
+│       │   ├── votaciones_api.py
+│       │   ├── votaciones_buscar.py
+│       │   ├── votaciones_embeds.py
+│       │   ├── votaciones_gustos.py
+│       │   ├── votaciones_logros.py
+│       │   ├── votaciones_ranking.py
+│       │   ├── votaciones_reacciones.py
+│       │   ├── votaciones_service.py
+│       │   └── votaciones_votos.py
+│       ├── __init__.py
+│       └── votaciones.py
+├── data
+│   ├── animes_server.json
+│   ├── gustos_server.json
+│   ├── logros.json
+│   ├── logros_server.json
+│   ├── rarezas.json
+│   └── uso_server.json
+├── db.py
+├── docker-compose.yml
+├── Dockerfile
+├── __init__.py
+├── main.py
+├── README.md
+├── requirements.txt
+├── tokendiscord.txt
+└── tokengithub.txt
 
-db.py
-logros.py
-main.py
-requirements.txt
-Dockerfile
-docker-compose.yml
 ```
 ---
 
