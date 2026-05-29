@@ -39,7 +39,14 @@ EXTENSIONES = [
     "cogs.utilidades.comandos.ping",
     "cogs.utilidades.comandos.lista",
     "cogs.utilidades.comandos.secreto",
-    "cogs.utilidades.estadisticas"
+    "cogs.utilidades.estadisticas",
+
+    # =========================
+    # 🏆 VOTACIONES
+    # =========================
+    "cogs.votaciones.comandos.votar",
+    "cogs.votaciones.comandos.popular",
+    "cogs.votaciones.votaciones"
 ]
 
 # =========================

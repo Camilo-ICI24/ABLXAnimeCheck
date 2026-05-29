@@ -1,4 +1,4 @@
-def formatear_menciones(self, usuarios):
+def formatear_menciones(usuarios):
     if not usuarios:
         return "Nadie viendo aún"
 
