@@ -27,6 +27,7 @@ EXTENSIONES = [
     "cogs.anime.comandos.unirse",
     "cogs.anime.comandos.verinfo",
     "cogs.anime.comandos.visto",
+    "cogs.anime.comandos.renombrar",
 
     # =========================
     # 🛠️ UTILIDADES
