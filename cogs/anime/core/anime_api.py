@@ -67,28 +67,44 @@ def obtener_secuela(mal_id, titulo_original):
 
 def obtener_total_anime(mal_id):
     episodios_totales = 0
-    temporadas = 0
-
-    actual_id = mal_id
     visitados = set()
 
-    while anime_no_visitado(actual_id, visitados):
+    actual_id = mal_id
+
+    while actual_id and actual_id not in visitados:
         visitados.add(actual_id)
 
         anime_data = obtener_anime(actual_id)
 
-        titulo_original = anime_data.get("title", "")
-
         if anime_data.get("type") == "TV":
-            episodios_totales += obtener_episodios(anime_data)
+            episodios_totales += anime_data.get("episodes") or 0
 
-        temporadas += 1
+        relaciones = obtener_relaciones(actual_id)
 
-        actual_id = obtener_secuela(actual_id, titulo_original)
+        siguiente = None
+
+        for r in relaciones:
+            if r["relation"] != "Sequel":
+                continue
+
+            for entry in r["entry"]:
+                if entry["type"] != "anime":
+                    continue
+
+                nombre = entry["name"]
+
+                if es_temporada_directa(anime_data.get("title", ""), nombre):
+                    siguiente = entry["mal_id"]
+                    break
+
+            if siguiente:
+                break
+
+        actual_id = siguiente
 
     return {
         "episodes": episodios_totales,
-        "temporadas": temporadas
+        "temporadas": len(visitados)
     }
 
 def anime_no_visitado(actual_id, visitados):
@@ -119,25 +135,23 @@ def agregar_aliases_titulos(aliases, anime):
             aliases.add(titulo["title"])
 
 def es_temporada_directa(titulo_original, titulo_secuela):
-    original = titulo_original.lower()
+    original = titulo_original.lower().split(":")[0].strip()
     secuela = titulo_secuela.lower()
 
-    # Debe compartir gran parte del nombre
-    if original.split(":")[0].strip() not in secuela:
+    if original not in secuela:
         return False
 
-    patrones_temporada = [
-        "2nd season",
-        "3rd season",
-        "4th season",
-        "5th season",
-        "season 2",
-        "season 3",
-        "season 4",
+    patrones = [
+        "season",
+        "2nd",
+        "3rd",
+        "4th",
+        "5th",
         "part 2",
         "part 3",
-        "part 4",
-        "final season"
+        "final",
+        "shippuuden",
+        "kai"
     ]
 
-    return any(p in secuela for p in patrones_temporada)
+    return any(p in secuela for p in patrones)
