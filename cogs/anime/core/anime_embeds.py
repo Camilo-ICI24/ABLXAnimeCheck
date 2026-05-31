@@ -147,3 +147,15 @@ def crear_embed_sin_cambios(ctx, anime):
     embed.set_footer(text=f"Solicitado por {ctx.author.name}")
 
     return embed
+
+def crear_embed_finalizacion(anime_nombre, imagen):
+    embed = discord.Embed(
+        title="🏁 REACCIÓN COMPLETADA",
+        description=f"🔥 El servidor ha terminado la reacción conjunta de **{anime_nombre}**",
+        color=0x00ffcc
+    )
+
+    if imagen:
+        embed.set_thumbnail(url=imagen)
+
+    return embed

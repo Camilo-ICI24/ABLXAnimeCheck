@@ -48,7 +48,7 @@ async def otorgar_logro(ctx, logro_id, usuario=None):
     evaluar_logros_especiales(data, server_id, user_id, otorgador)
 
     logro = LOGROS[logro_id]
-    embed = crear_embed_logro(ctx, logro, usuario)
+    embed = crear_embed_logro(logro, usuario)
 
     await ctx.send(embed=embed)
 

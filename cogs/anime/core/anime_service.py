@@ -48,7 +48,7 @@ def procesar_multiple(usuarios, mencionados, capitulo, key, data):
 def es_caso_individual(mencionados, autor_id): 
     return (not mencionados or (len(mencionados) == 1 and str(mencionados[0].id) == autor_id))
 
-async def procesar_logros_avanzar(self, ctx, logro_maraton, cap_anterior, cap_nuevo, server_data, 
+async def procesar_logros_avanzar(ctx, logro_maraton, cap_anterior, cap_nuevo, server_data, 
                                   autor_id):
 
         # Logro: "Primer maratón"
@@ -56,7 +56,7 @@ async def procesar_logros_avanzar(self, ctx, logro_maraton, cap_anterior, cap_nu
             await otorgar_logro(ctx, "primer_maraton")
 
         # Logro: "Speedrunner"
-        delta = cap_nuevo - cap_anterior
+        delta = int(cap_nuevo) - int(cap_anterior or 0)
 
         if delta >= 10:
             await otorgar_logro(ctx, "speedrunner")

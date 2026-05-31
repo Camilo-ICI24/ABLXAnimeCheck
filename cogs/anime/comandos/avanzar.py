@@ -1,5 +1,7 @@
 from cogs.utilidades.core.logros.logros_service import otorgar_logro
-from ..core.anime_embeds import crear_embed_racha, crear_embed_atraso, crear_embed_visto
+from ..core.anime_embeds import (crear_embed_racha, crear_embed_atraso, crear_embed_visto, 
+                                 crear_embed_finalizacion)
+from ..core.anime_finalizacion import servidor_termino_anime
 from ..core.anime_progreso import detectar_desbalance
 from ..core.anime_repository import get_data, get_key
 from ..core.anime_service import procesar_avance, procesar_logros_avanzar
@@ -32,6 +34,9 @@ class Avanzar(commands.Cog):
 
         usuarios = server_data[key].get("usuarios", {})
 
+        # =========================
+        # PROCESAR AVANCE NORMAL
+        # =========================
         error, embed, logro_maraton, cap_anterior = procesar_avance(usuarios, mencionados, autor_id,
                                                                     capitulo, key, data)
 
@@ -42,6 +47,9 @@ class Avanzar(commands.Cog):
 
         info = server_data[key]
 
+        # =========================
+        # MARCAR VISTO INDIVIDUAL
+        # =========================
         cap_actual = obtener_cap_actual(usuarios, autor_id)
         episodios_totales = obtener_episodios_totales(info)
 
@@ -49,19 +57,26 @@ class Avanzar(commands.Cog):
             if not usuarios[autor_id].get("visto", False):
 
                 marcar_visto(usuarios, autor_id)
-
                 guardar(data)
 
                 embed_visto = crear_embed_visto(ctx, key)
-
                 await ctx.send(embed=embed_visto)
 
                 await otorgar_logro(ctx, "finalista")
 
+        # =========================
+        # LOGROS
+        # =========================
         await procesar_logros_avanzar(ctx, logro_maraton, cap_anterior, capitulo, server_data, autor_id)
 
+        # =========================
+        # EMBED AVANCE
+        # =========================
         await ctx.send(embed=embed)
 
+        # =========================
+        # DESBALANCE DEL GRUPO
+        # =========================
         adelantados, atrasados = detectar_desbalance(usuarios)
 
         if adelantados:
@@ -70,6 +85,22 @@ class Avanzar(commands.Cog):
         if atrasados:
             await ctx.send(embed=crear_embed_atraso(key, atrasados))
 
+        # =========================
+        # 🏁 FINALIZACIÓN DEL SERVIDOR
+        # =========================
+        episodios_totales = obtener_episodios_totales(info)
+
+        if servidor_termino_anime(usuarios, episodios_totales):
+
+            # evita spameo si ya se notificó antes
+            if not info.get("finalizado", False):
+
+                info["finalizado"] = True
+                guardar(data)
+
+                embed_final = crear_embed_finalizacion(key, info.get("image"))
+
+                await ctx.send(embed=embed_final)
 
 async def setup(bot):
     await bot.add_cog(Avanzar(bot))
