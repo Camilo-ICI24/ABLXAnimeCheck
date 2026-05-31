@@ -11,7 +11,6 @@ def texto_comandos():
         "✏️ $renombrar \"Nombre actual\" \"Nombre nuevo\"\n"
         "🏷️ $alias \"Nombre\" \"alias1\" \"alias2\" ...\n"
         "✅ $visto \"Nombre\"\n"
-        "🏁 $end Nombre\n"
         "❌ $eliminaranime \"Nombre\"\n"
         "⏳ $progreso Nombre\n"
         "❓ $guia Comando\n"

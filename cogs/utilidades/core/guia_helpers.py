@@ -53,11 +53,6 @@ def obtener_guias():
         "→ Cambia el nombre de un anime.\n"
         "• Mantiene toda la información existente",
 
-        "end":
-        "*Sintaxis:* $end \"Nombre\"\n"
-        "→ Indica la finalización de la reacción de un anime.\n"
-        "• Actualiza el estado del anime, señalando que cada participante lo ha visto enteramente.",
-
         "infobot":
         "*Sintaxis:* $infobot\n"
         "→ Entrega todos los datos relacionados con el desarrollo actual del bot.\n"
