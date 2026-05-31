@@ -107,7 +107,7 @@ def crear_embed_racha(key, adelantados):
         color=0x00ffcc
     )
 
-def crear_embed_atraso(self, key, atrasados):
+def crear_embed_atraso(key, atrasados):
     return discord.Embed(
         description=(
             f"🐢 Se están quedando atrás en **{key}**:\n"
@@ -116,3 +116,34 @@ def crear_embed_atraso(self, key, atrasados):
         ),
         color=0xff4444
     )
+
+def crear_embed_actualizado(ctx, anime, cambios):
+    embed = discord.Embed(
+        title="🟢 ¡Anime puesto al día!",
+        description=f"Se actualizó la información de **{anime}**",
+        color=discord.Color.green()
+    )
+
+    if cambios:
+        for cambio in cambios:
+            embed.add_field(
+                name="🔄 Cambio detectado",
+                value=cambio,
+                inline=False
+            )
+
+    embed.set_thumbnail(url=cambios.get("image") if isinstance(cambios, dict) else None)
+    embed.set_footer(text=f"Solicitado por {ctx.author.name}")
+
+    return embed
+
+def crear_embed_sin_cambios(ctx, anime):
+    embed = discord.Embed(
+        title="🟡 Sin cambios",
+        description=f"**{anime}** ya está actualizado con la API.",
+        color=discord.Color.gold()
+    )
+
+    embed.set_footer(text=f"Solicitado por {ctx.author.name}")
+
+    return embed

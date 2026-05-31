@@ -1,9 +1,12 @@
-from discord.ext import commands
+from cogs.utilidades.core.logros.logros_service import otorgar_logro
+from ..core.anime_embeds import crear_embed_racha, crear_embed_atraso, crear_embed_visto
+from ..core.anime_progreso import detectar_desbalance
 from ..core.anime_repository import get_data, get_key
 from ..core.anime_service import procesar_avance, procesar_logros_avanzar
-from ..core.anime_progreso import detectar_desbalance
-from ..core.anime_embeds import crear_embed_racha, crear_embed_atraso
+from ..core.anime_users import obtener_cap_actual, marcar_visto
+from ..core.anime_visto import obtener_episodios_totales, puede_marcar_visto
 from db import guardar
+from discord.ext import commands
 
 
 class Avanzar(commands.Cog):
@@ -36,6 +39,24 @@ class Avanzar(commands.Cog):
             return await ctx.send(error)
 
         guardar(data)
+
+        info = server_data[key]
+
+        cap_actual = obtener_cap_actual(usuarios, autor_id)
+        episodios_totales = obtener_episodios_totales(info)
+
+        if puede_marcar_visto(cap_actual, episodios_totales):
+            if not usuarios[autor_id].get("visto", False):
+
+                marcar_visto(usuarios, autor_id)
+
+                guardar(data)
+
+                embed_visto = crear_embed_visto(ctx, key)
+
+                await ctx.send(embed=embed_visto)
+
+                await otorgar_logro(ctx, "finalista")
 
         await procesar_logros_avanzar(ctx, logro_maraton, cap_anterior, capitulo, server_data, autor_id)
 

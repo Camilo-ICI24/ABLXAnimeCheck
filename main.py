@@ -22,6 +22,7 @@ EXTENSIONES = [
     "cogs.anime.comandos.startanime",
     "cogs.anime.comandos.avanzar",
     "cogs.anime.comandos.alias",
+    "cogs.anime.comandos.actualizar",
     "cogs.anime.comandos.eliminaranime",
     "cogs.anime.comandos.progreso",
     "cogs.anime.comandos.unirse",
