@@ -29,6 +29,7 @@ EXTENSIONES = [
     "cogs.anime.comandos.verinfo",
     "cogs.anime.comandos.visto",
     "cogs.anime.comandos.dropear",
+    "cogs.anime.comandos.dropeados",
     "cogs.anime.comandos.renombrar",
 
     # =========================

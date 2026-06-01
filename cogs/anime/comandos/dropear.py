@@ -1,7 +1,10 @@
 from discord.ext import commands
+from cogs.anime.core.anime_dropeados import dropear_anime, usuario_dropeo_anime
 from cogs.anime.core.anime_embeds import crear_embed_drop
 from cogs.anime.core.anime_repository import get_data, get_key
 from db import guardar
+import os
+import json
 
 
 class Dropear(commands.Cog):
@@ -17,15 +20,25 @@ class Dropear(commands.Cog):
         if not key:
             return await ctx.send("❌ No existe ese anime")
 
-        usuarios = server_data[key].get("usuarios", {})
         uid = str(ctx.author.id)
 
-        if uid not in usuarios:
-            return await ctx.send("❌ No estás en ese anime")
+        # =========================
+        # 🚫 YA DROPEADO (AQUÍ USAS TU MÓDULO)
+        # =========================
+        if usuario_dropeo_anime(uid, key):
+            return await ctx.send("❌ Ya has dropeado este anime")
 
-        # Marcar como dropeado
-        usuarios[uid]["dropeado"] = True
+        # =========================
+        # ✔ MARCAR DROPEO
+        # =========================
+        ok = dropear_anime(uid, key)
 
+        if not ok:
+            return await ctx.send("❌ Error al dropear")
+
+        # =========================
+        # 💾 guardar anime_server igual (NO DEPENDE DEL OTRO JSON)
+        # =========================
         guardar(data)
 
         embed = crear_embed_drop(ctx.author, key)

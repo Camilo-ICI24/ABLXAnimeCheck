@@ -4,6 +4,7 @@ import os
 DB_FILE = "data/animes_server.json"
 USO_FILE = "data/uso_server.json"
 GUSTOS_FILE = "data/gustos_server.json"
+DROPEADOS_FILE = "data/dropeados_server.json"
 
 # =========================
 # 👥 HELPERS USUARIOS
@@ -195,8 +196,26 @@ def cargar():
 # 💾 GUARDAR
 # =========================
 def _escribir_json(data):
-    with open(DB_FILE, "w") as arch:
-        json.dump(data, arch, indent=4)
+
+    print("\n💾 === ESCRITURA JSON INICIADA ===")
+    print("📂 ARCHIVO REAL:", os.path.abspath(DB_FILE))
+    print("📦 TIPOS DE DATA:", type(data))
+
+    try:
+        with open(DB_FILE, "w", encoding="utf-8") as arch:
+            json.dump(data, arch, indent=4, ensure_ascii=False)
+
+        print("✅ ESCRITURA EXITOSA")
+
+        # VERIFICACIÓN INMEDIATA
+        with open(DB_FILE, "r", encoding="utf-8") as arch:
+            check = json.load(arch)
+
+        print("🔍 VERIFICACIÓN DISCO OK")
+        print("📄 KEYS EN DISCO:", list(check.keys()))
+
+    except Exception as e:
+        print("❌ ERROR ESCRIBIENDO JSON:", e)
 
 def guardar(data):
     try:
@@ -246,6 +265,30 @@ def guardar_gustos(data, path=GUSTOS_FILE):
             json.dump(data, archivo, indent=4)
     except Exception as error:
         print("Se ha producido un error guardando gustos:", error)
+
+# Lógica dropeados
+def cargar_dropeados():
+    try:
+        with open(DROPEADOS_FILE, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+
+            # 🔥 archivo vacío
+            if not content:
+                return {}
+
+            return json.loads(content)
+        
+    except FileNotFoundError as no_existe_archivo:
+        print("Se ha producido un error al cargar animes dropeados: ", no_existe_archivo)
+        return {}
+
+    except json.JSONDecodeError as error_decode:
+        print("Se ha producido un error al decodificar el archivo: ", error_decode)
+
+
+def guardar_dropeados(data):
+    with open(DROPEADOS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
 
 # =========================
 # 🧠 SERVIDOR
