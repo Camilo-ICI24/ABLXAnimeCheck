@@ -60,7 +60,7 @@ class VerInfo(commands.Cog):
 
         embed.add_field(
             name="📖 Progreso de usuarios",
-            value=formatear_progreso(usuarios),
+            value=formatear_progreso(usuarios, key),
             inline=False
         )
 

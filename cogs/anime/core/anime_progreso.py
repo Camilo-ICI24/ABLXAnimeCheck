@@ -1,3 +1,4 @@
+from ..core.anime_dropeados import usuario_dropeo_anime
 from .anime_users import obtener_caps, parse_usuario
 
 def ordenar_por_progreso(usuarios):
@@ -36,7 +37,7 @@ def obtener_delta_cap(usuarios, uid):
         return data.get("cap", 1)
     return data
 
-def formatear_progreso(usuarios):
+def formatear_progreso(usuarios, anime_key):
     if not usuarios:
         return "Nadie viendo aún"
 
@@ -47,11 +48,17 @@ def formatear_progreso(usuarios):
     for uid, _ in ordenados:
         data = usuarios[uid]
 
-        cap, visto = parse_usuario(data)
+        cap = data.get("cap", 1)
+        visto = data.get("visto", False)
+
+        # 🔥 CONSULTA REAL AL DROPEADOS_SERVER.JSON
+        dropeado = usuario_dropeo_anime(uid, anime_key)
 
         linea = f"👤 <@{uid}> → Cap {cap}"
 
-        if visto:
+        if dropeado:
+            linea += " ❌"
+        elif visto:
             linea += " ✅"
 
         texto.append(linea)
