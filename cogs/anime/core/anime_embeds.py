@@ -182,3 +182,14 @@ def crear_embed_warning_visto():
         ),
         color=discord.Color.red()
     )
+
+def crear_embed_drop(usuario, anime):
+    embed = discord.Embed(
+        title="💔 Anime dropeado",
+        description=f"{usuario.mention} ha dropeado **{anime}**.\n\n😢 ¡Lamentamos verte partir!",
+        color=discord.Color.red()
+    )
+
+    embed.set_thumbnail(url=usuario.display_avatar.url)
+
+    return embed
