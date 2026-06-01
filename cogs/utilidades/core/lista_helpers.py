@@ -1,5 +1,6 @@
 from .progreso_helpers import normalizar_usuarios, formatear_menciones
 from db import cargar, get_server_data
+from cogs.anime.core.anime_dropeados import usuario_dropeo_anime
 import discord
 
 def get_data(ctx):
@@ -23,12 +24,28 @@ def crear_base_embed_lista():
         color=0x00ffcc
     )
 
-def formatear_anime_lista(info):
+def formatear_anime_lista(nombre, info):
     cap = info.get("capitulo", 1)
-    usuarios = normalizar_usuarios(info.get("usuarios", {}), cap)
-    menciones = formatear_menciones(usuarios)
+    usuarios = info.get("usuarios", {})
 
-    return f"📖 Capítulo: {cap}\n👥 Viendo:\n{menciones}"
+    texto = []
+
+    for uid, data in usuarios.items():
+
+        cap_user = data.get("cap", 1)
+        visto = data.get("visto", False)
+
+        linea = f"👤 <@{uid}> - Cap {cap_user}"
+
+        # 🔥 AQUÍ está la clave REAL
+        if usuario_dropeo_anime(uid, nombre):
+            linea += " ❌"
+        elif visto:
+            linea += " ✅"
+
+        texto.append(linea)
+
+    return f"📖 Capítulo: {cap}\n👥 Viendo:\n" + "\n".join(texto)
 
 def chunk_animes(server_data, size=5):
     items = list(sorted(server_data.items()))
@@ -40,7 +57,7 @@ def crear_embed_lista_pagina(pagina, total_paginas, animes):
     embed.set_footer(text=f"Página {pagina+1}/{total_paginas}")
 
     for nombre, info in animes:
-        valor = formatear_anime_lista(info)
+        valor = formatear_anime_lista(nombre, info)
         embed.add_field(name=f"🎬 {nombre}", value=valor, inline=False)
 
     return embed
