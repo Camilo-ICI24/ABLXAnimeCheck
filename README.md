@@ -9,6 +9,7 @@ Bot de Discord para gestionar animes en comunidad: seguimiento de capítulos, pr
 - [Características](#características)
 - [Comandos principales](#-comandos-principales)
 - [Funcionamiento del bot](#funcionamiento-del-bot)
+- [Sistema de logros](#sistema-de-logros)
 - [Estructura del proyecto](#estructura-del-proyecto)
 - [Requisitos](#requisitos)
 - [Ejecución del bot](#-ejecución-del-bot)
@@ -69,6 +70,21 @@ Adicionalmente, cuenta con un sistema de logros en primera fase, la cual es otor
 El bot cuenta con funcionamiento híbrido, pudiendo iniciarse desde el archivo principal ```main.py``` en la consola, o mediante el Docker Compose, utilizando la imagen creada para un funcionamiento permanente, asegurando integridad de los datos almacenados en los archivos JSON durante la ejecución, gracias al uso de volúmenes persistentes.
 
 ---
+
+## Sistema de logros
+
+El bot incluye un sistema de logros desbloqueables que recompensa
+distintas acciones realizadas por los usuarios:
+
+- Primer capítulo
+- Primer maratón
+- Speedrunner
+- Finalista
+- Maratonista
+- Sin dormir
+- Coleccionista
+
+Los logros se almacenan por servidor y usuario. También es posible modificar, crear y eliminar logros directamente desde el JSON asignado, con el objetivo de entregar una experiencia más única y personalidada para el servidor.
 
 ## Estructura del proyecto
 ```bash
