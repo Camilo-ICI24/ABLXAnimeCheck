@@ -47,3 +47,10 @@ def usuario_dropeo_anime(uid, anime_key):
 
     user = data.get(uid, {})
     return anime_key in user.get("dropeados", [])
+
+def obtener_dropeados(uid):
+    data = cargar_dropeados()
+    uid = str(uid)
+
+    user = data.get(uid, {})
+    return user.get("dropeados", [])

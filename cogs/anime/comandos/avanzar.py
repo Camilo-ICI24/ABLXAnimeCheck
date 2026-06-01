@@ -1,4 +1,4 @@
-from cogs.utilidades.core.logros.logros_service import otorgar_logro
+from ..core.anime_dropeados import usuario_dropeo_anime  # 🔥 NUEVO
 from ..core.anime_embeds import (crear_embed_racha, crear_embed_atraso, crear_embed_visto, 
                                  crear_embed_finalizacion)
 from ..core.anime_finalizacion import servidor_termino_anime
@@ -7,6 +7,7 @@ from ..core.anime_repository import get_data, get_key
 from ..core.anime_service import procesar_avance, procesar_logros_avanzar
 from ..core.anime_users import obtener_cap_actual, marcar_visto
 from ..core.anime_visto import obtener_episodios_totales, puede_marcar_visto
+from cogs.utilidades.core.logros.logros_service import otorgar_logro
 from db import guardar
 from discord.ext import commands
 
@@ -15,12 +16,8 @@ class Avanzar(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # =========================
-    # ⏩ AVANZAR
-    # =========================
     @commands.command()
     async def avanzar(self, ctx, capitulo: int, *, args):
-
         data, server_data = get_data(ctx)
 
         mencionados = ctx.message.mentions
@@ -35,10 +32,17 @@ class Avanzar(commands.Cog):
         usuarios = server_data[key].get("usuarios", {})
 
         # =========================
+        # 🚫 BLOQUEO POR DROPEO (NUEVO)
+        # =========================
+        if usuario_dropeo_anime(autor_id, key):
+            return await ctx.send("🚫 No puedes avanzar: has dropeado este anime")
+
+        # =========================
         # PROCESAR AVANCE NORMAL
         # =========================
-        error, embed, logro_maraton, cap_anterior = procesar_avance(usuarios, mencionados, autor_id,
-                                                                    capitulo, key, data)
+        error, embed, logro_maraton, cap_anterior = procesar_avance(
+            usuarios, mencionados, autor_id, capitulo, key, data
+        )
 
         if error:
             return await ctx.send(error)
@@ -87,23 +91,25 @@ class Avanzar(commands.Cog):
             await ctx.send(embed=crear_embed_atraso(key, atrasados))
 
         # =========================
-        # 🏁 FINALIZACIÓN DEL SERVIDOR
+        # FINALIZACIÓN DEL SERVIDOR
         # =========================
         episodios_totales = obtener_episodios_totales(info)
 
         if servidor_termino_anime(usuarios, episodios_totales):
 
-            # evita spameo si ya se notificó antes
             if not info.get("finalizado", False):
 
                 info["finalizado"] = True
                 guardar(data)
 
-                embed_final = crear_embed_finalizacion(key, info.get("image"), (ctx.guild.icon.url if 
-                                                                                ctx.guild.icon else 
-                                                                                None))
+                embed_final = crear_embed_finalizacion(
+                    key,
+                    info.get("image"),
+                    (ctx.guild.icon.url if ctx.guild.icon else None)
+                )
 
                 await ctx.send(embed=embed_final)
+
 
 async def setup(bot):
     await bot.add_cog(Avanzar(bot))
