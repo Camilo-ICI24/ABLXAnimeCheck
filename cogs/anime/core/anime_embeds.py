@@ -159,3 +159,14 @@ def crear_embed_finalizacion(anime_nombre, imagen):
         embed.set_thumbnail(url=imagen)
 
     return embed
+
+def crear_embed_warning_visto():
+    return discord.Embed(
+        title="⚠️ Comando deprecado",
+        description=(
+            "El comando **$visto** está obsoleto.\n\n"
+            "Ahora basta con usar **$avanzar** hasta el último capítulo y "
+            "el anime se marcará automáticamente como visto."
+        ),
+        color=discord.Color.red()
+    )

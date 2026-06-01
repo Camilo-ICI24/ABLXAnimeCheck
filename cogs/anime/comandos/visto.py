@@ -1,8 +1,9 @@
 from discord.ext import commands
 from ..core.anime_repository import get_data, get_key
 from ..core.anime_users import obtener_cap_actual, marcar_visto
-from ..core.anime_visto import obtener_episodios_totales, puede_marcar_visto, crear_mensaje_no_terminado
-from ..core.anime_embeds import crear_embed_visto
+from ..core.anime_visto import (obtener_episodios_totales, puede_marcar_visto, 
+                                crear_mensaje_no_terminado)
+from ..core.anime_embeds import crear_embed_visto, crear_embed_warning_visto
 from cogs.utilidades.core.logros.logros_service import otorgar_logro
 from db import guardar
 
@@ -14,6 +15,7 @@ class Visto(commands.Cog):
 
     @commands.command()
     async def visto(self, ctx, *, nombre):
+        await ctx.send(embed=crear_embed_warning_visto())
 
         data, server_data = get_data(ctx)
 

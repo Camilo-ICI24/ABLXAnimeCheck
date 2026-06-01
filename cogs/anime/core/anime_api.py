@@ -72,28 +72,49 @@ def obtener_total_anime(mal_id):
     actual_id = mal_id
 
     while actual_id and actual_id not in visitados:
+
+        print("\n====================")
+        print("VISITANDO:", actual_id)
+
         visitados.add(actual_id)
 
         anime_data = obtener_anime(actual_id)
 
+        print("TITULO:", anime_data.get("title"))
+        print("TIPO:", anime_data.get("type"))
+        print("EPISODIOS:", anime_data.get("episodes"))
+
         if anime_data.get("type") == "TV":
             episodios_totales += anime_data.get("episodes") or 0
+
+        print("TOTAL ACUMULADO:", episodios_totales)
 
         relaciones = obtener_relaciones(actual_id)
 
         siguiente = None
 
         for r in relaciones:
+
+            print("RELACION:", r["relation"])
+
             if r["relation"] != "Sequel":
                 continue
 
             for entry in r["entry"]:
+
                 if entry["type"] != "anime":
                     continue
 
                 nombre = entry["name"]
 
-                if es_temporada_directa(anime_data.get("title", ""), nombre):
+                print("POSIBLE SECUELA:", nombre)
+
+                if es_temporada_directa(
+                    anime_data.get("title", ""),
+                    nombre
+                ):
+                    print("SECUELA ACEPTADA:", nombre)
+
                     siguiente = entry["mal_id"]
                     break
 
@@ -101,6 +122,10 @@ def obtener_total_anime(mal_id):
                 break
 
         actual_id = siguiente
+
+    print("\nFIN")
+    print("TEMPORADAS:", len(visitados))
+    print("EPISODIOS TOTALES:", episodios_totales)
 
     return {
         "episodes": episodios_totales,
@@ -134,24 +159,37 @@ def agregar_aliases_titulos(aliases, anime):
         if titulo.get("title"):
             aliases.add(titulo["title"])
 
-def es_temporada_directa(titulo_original, titulo_secuela):
-    original = titulo_original.lower().split(":")[0].strip()
-    secuela = titulo_secuela.lower()
-
-    if original not in secuela:
-        return False
+def limpiar_temporada(titulo):
+    titulo = titulo.lower()
 
     patrones = [
-        "season",
-        "2nd",
-        "3rd",
-        "4th",
-        "5th",
+        "1st season",
+        "2nd season",
+        "3rd season",
+        "4th season",
+        "5th season",
+        "season 1",
+        "season 2",
+        "season 3",
+        "season 4",
+        "season 5",
         "part 2",
         "part 3",
-        "final",
+        "part 4",
+        "final season",
         "shippuuden",
-        "kai"
+        "kai",
+        "brotherhood"
     ]
 
-    return any(p in secuela for p in patrones)
+    for patron in patrones:
+        titulo = titulo.replace(patron, "")
+
+    return titulo.strip()
+
+def es_temporada_directa(titulo_original, titulo_secuela):
+
+    original = limpiar_temporada(titulo_original)
+    secuela = limpiar_temporada(titulo_secuela)
+
+    return original == secuela

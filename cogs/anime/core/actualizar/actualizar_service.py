@@ -1,7 +1,7 @@
-from cogs.anime.core.anime_repository import get_key
+from cogs.anime.core.anime_api import buscar_anime_jikan, obtener_total_anime
 from cogs.anime.core.anime_embeds import crear_embed_actualizado, crear_embed_sin_cambios
-from cogs.anime.core.anime_api import buscar_anime_jikan
-from cogs.anime.core.anime_api import obtener_total_anime
+from cogs.anime.core.anime_repository import get_key
+from cogs.anime.core.anime_visto import obtener_episodios_totales, revalidar_usuario_visto
 from db import cargar, get_server_data, guardar
 import discord
 
@@ -105,9 +105,26 @@ async def ejecutar_actualizar(ctx, nombre):
     guardar(data)
 
     # =========================
+    # 🔁 REVALIDAR VISTO
+    # =========================
+    for anime_key, anime_info in server_data.items():
+        usuarios = anime_info.get("usuarios", {})
+
+        if usuarios:
+            revalidar_vistos_anime(usuarios, anime_info)
+
+    guardar(data)
+
+    # =========================
     # 📤 EMBEDEAR RESULTADO
     # =========================
     if cambios:
         await ctx.send(embed=crear_embed_actualizado(ctx, key, cambios))
     else:
         await ctx.send(embed=crear_embed_sin_cambios(ctx, key))
+
+def revalidar_vistos_anime(usuarios, info):
+    episodios_totales = obtener_episodios_totales(info)
+
+    for uid, data in usuarios.items():
+        revalidar_usuario_visto(uid, data, episodios_totales)

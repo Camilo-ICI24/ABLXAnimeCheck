@@ -57,3 +57,8 @@ def formatear_progreso(usuarios):
         texto.append(linea)
 
     return "\n".join(texto)
+
+def obtener_cap_usuario(data):
+    if isinstance(data, dict):
+        return data.get("cap", 1)
+    return data
