@@ -41,7 +41,8 @@ Bot de Discord para gestionar animes en comunidad: seguimiento de capítulos, pr
 - 📊 $votar Nombre
 - 🏆 $popular 
 - 🏷️ $alias "Nombre" "alias1" ... 
-- ✅ $visto "Nombre"
+- ⚠️ $visto Nombre (obsoleto, mantenido por compatibilidad)
+- 🔄 $actualizar Nombre
 - ❌ $eliminaranime "Nombre"
 - ✏️ $renombrar \"Nombre actual\" \"Nombre nuevo\"\n"
 - 📦 $infobot
@@ -75,10 +76,11 @@ El bot cuenta con funcionamiento híbrido, pudiendo iniciarse desde el archivo p
 │   ├── anime
 │   │   ├── anime.py
 │   │   ├── comandos
+│   │   │   ├── __init__.py
 │   │   │   ├── alias.py
 │   │   │   ├── avanzar.py
+│   │   │   ├── actualizar.py
 │   │   │   ├── eliminaranime.py
-│   │   │   ├── __init__.py
 │   │   │   ├── progreso.py
 │   │   │   ├── renombrar.py
 │   │   │   ├── startanime.py
@@ -89,18 +91,22 @@ El bot cuenta con funcionamiento híbrido, pudiendo iniciarse desde el archivo p
 │   │   │   ├── anime_alias.py
 │   │   │   ├── anime_api.py
 │   │   │   ├── anime_embeds.py
+│   │   │   ├── anime_finalizacion.py
 │   │   │   ├── anime_progreso.py
 │   │   │   ├── anime_repository.py
 │   │   │   ├── anime_service.py
 │   │   │   ├── anime_users.py
 │   │   │   ├── anime_visto.py
 │   │   │   ├── __init__.py
-│   │   │   └── renombrar
-│   │   │       ├── __init__.py
-│   │   │       ├── renombrar_embeds.py
-│   │   │       ├── renombrar_repository.py
-│   │   │       ├── renombrar_service.py
-│   │   │       └── renombrar_validaciones.py
+│   │   │   ├── renombrar
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── renombrar_embeds.py
+│   │   │   │   ├── renombrar_repository.py
+│   │   │   │   ├── renombrar_service.py
+│   │   │   │   └── renombrar_validaciones.py
+│   │   │   ├── actualizar
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── actualizar_service.py
 │   │   ├── __init__.py
 │   │   └── utils
 │   │       ├── eliminaranime_utils.py

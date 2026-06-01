@@ -67,7 +67,8 @@ class Avanzar(commands.Cog):
         # =========================
         # LOGROS
         # =========================
-        await procesar_logros_avanzar(ctx, logro_maraton, cap_anterior, capitulo, server_data, autor_id)
+        await procesar_logros_avanzar(ctx, logro_maraton, cap_anterior, capitulo, server_data, 
+                                      autor_id)
 
         # =========================
         # EMBED AVANCE
@@ -98,7 +99,9 @@ class Avanzar(commands.Cog):
                 info["finalizado"] = True
                 guardar(data)
 
-                embed_final = crear_embed_finalizacion(key, info.get("image"))
+                embed_final = crear_embed_finalizacion(key, info.get("image"), (ctx.guild.icon.url if 
+                                                                                ctx.guild.icon else 
+                                                                                None))
 
                 await ctx.send(embed=embed_final)
 

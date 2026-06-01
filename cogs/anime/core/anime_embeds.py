@@ -37,9 +37,13 @@ def crear_embed_visto(ctx, key):
     embed = discord.Embed(
         title="🏁 Anime completado",
         description=f"{ctx.author.mention} terminó **{key}** 🎉",
-        color=0x00ffcc
+        color=0x9B59B6
     )
+
     embed.add_field(name="Estado", value="✔ Marcado como visto", inline=False)
+
+    embed.set_thumbnail(url=ctx.author.display_avatar.url)
+
     return embed
 
 def crear_embed_verinfo(key):
@@ -148,15 +152,23 @@ def crear_embed_sin_cambios(ctx, anime):
 
     return embed
 
-def crear_embed_finalizacion(anime_nombre, imagen):
+def crear_embed_finalizacion(key, image_url, icono_servidor=None):
     embed = discord.Embed(
-        title="🏁 REACCIÓN COMPLETADA",
-        description=f"🔥 El servidor ha terminado la reacción conjunta de **{anime_nombre}**",
-        color=0x00ffcc
+        title="🎉 Reacción completada",
+        description=(
+            f"Todos los participantes han terminado "
+            f"**{key}**"
+        ),
+        color=0xFFD700  # amarillo dorado
     )
 
-    if imagen:
-        embed.set_thumbnail(url=imagen)
+    # Icono del servidor arriba a la derecha
+    if icono_servidor:
+        embed.set_thumbnail(url=icono_servidor)
+
+    # Imagen del anime grande abajo
+    if image_url:
+        embed.set_image(url=image_url)
 
     return embed
 
