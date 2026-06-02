@@ -4,7 +4,7 @@ def guia_general():
         "`$guia <comando>`\n\n"
         "Ejemplo: `$guia startanime`\n\n"
         "Comandos disponibles:\n"
-        "startanime, unirse, verinfo, avanzar, lista, votar, popular, renombrar, end, "
+        "startanime, unirse, verinfo, avanzar, lista, votar, popular, renombrar,  "
         "guia, progreso, eliminaranime"
     )
 

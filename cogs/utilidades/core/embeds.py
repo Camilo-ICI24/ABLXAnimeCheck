@@ -36,14 +36,16 @@ def agregar_seccion_novedades(embed):
     embed.add_field(
         name="🆕 Novedades",
         value=(
-            "• Sistema de logros implementado - Primera versión\n"
-            "• Dockerización para despliegue sencillo\n"
+            "• Comandos para dropear y desdropear animes\n"
+            "• Lista de animes dropeados por el usuario\n"
+            "• Deprecación de comando $visto e integración automática con $avanzar\n"
+            "• Eliminación de comando $end obsoleto\n"
         ),
         inline=False
     )
 
 def agregar_seccion_metadata(embed):
-    embed.add_field(name="🧪 Versión", value="v2026-05-13(beta)", inline=True)
+    embed.add_field(name="🧪 Versión", value="v2026-06-02(beta)", inline=True)
     embed.add_field(
         name="📦 Repositorio",
         value="[GitHub](https://github.com/Camilo-ICI24/ABLXAnimeCheck.git)",
