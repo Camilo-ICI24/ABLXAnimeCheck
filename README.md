@@ -33,7 +33,7 @@ Bot de Discord para gestionar animes en comunidad: seguimiento de capítulos, pr
 
 ---
 
-## 🚀 Comandos principales
+## Comandos principales
 - 🎬 $startanime "Nombre" @usuarios
 - 👥 $unirse Nombre
 - 🔍 $verinfo Nombre
@@ -45,7 +45,10 @@ Bot de Discord para gestionar animes en comunidad: seguimiento de capítulos, pr
 - ⚠️ $visto Nombre (obsoleto, mantenido por compatibilidad)
 - 🔄 $actualizar Nombre
 - ❌ $eliminaranime "Nombre"
-- ✏️ $renombrar \"Nombre actual\" \"Nombre nuevo\"\n"
+- ✏️ $renombrar \"Nombre actual\" \"Nombre nuevo\"
+- "⬇️ $dropear Nombre \n"
+- "📤 $dropeados\n"
+- "🔄 $desdropear Nombre\n"
 - 📦 $infobot
 - 🏓 $ping
 - 🏅 $logros
@@ -64,6 +67,10 @@ El bot guarda la información por servidor en un archivo JSON (`animes_server.js
 Además:
 - Integra la API de **Jikan (MyAnimeList)** para obtener datos automáticamente  
 - Soporta migración de datos antiguos a nuevos formatos 
+
+El bot permite registrar el avance en la reacción de un anime, ya sea de forma individual o grupal mediante varios comandos disponibles, premiando a los usuarios que logren finalizar una reacción íntegramente. A su vez, permite calificaciones grupales a los animes que se encuentren viendo en el momento mediante un sistema de votación privado, el cual también se almacena para obtener un listado de los animes con mejor recepción en el servidor.
+
+Cuenta también con una opción de dropear un anime en el caso de que la emisión no satisfaga completamente a uno o más miembros de la reacción, pudiendo abandonar la visualización del annime de manera temporal o permanentemente, almacenando una lista de programas abandonados en un JSON asociado (`dropeados_server.json`).
 
 Adicionalmente, cuenta con un sistema de logros en primera fase, la cual es otorgado a cada usuario si cumple con ciertos requisitos definidos. Dichas recompensas pueden ser personalizadas para cada servidor, incluso agregando nuevos logros y tipos de rarezas para mejorar la experiencia de los usuarios.
 
@@ -102,6 +109,9 @@ Los logros se almacenan por servidor y usuario. También es posible modificar, c
 │   │   │   ├── startanime.py
 │   │   │   ├── unirse.py
 │   │   │   ├── verinfo.py
+│   │   │   ├── dropear.py
+│   │   │   ├── dropeados.py
+│   │   │   ├── desdropear.py
 │   │   │   └── visto.py
 │   │   ├── core
 │   │   │   ├── anime_alias.py
@@ -212,7 +222,7 @@ Los logros se almacenan por servidor y usuario. También es posible modificar, c
 
 ---
 
-## 🚀 Ejecución del bot
+## Ejecución del bot
 
 Este proyecto soporta dos formas de ejecución:
 
@@ -246,7 +256,7 @@ DISCORD_TOKEN=token_personal_de_discord
 
 ---
 
-### 🐳 Ejecución con Docker
+### Ejecución con Docker
 
 ```bash
 # Construir y ejecutar
@@ -267,19 +277,19 @@ docker compose logs -f
 
 Versión actual:
 
-v0.5.0 — Requiem
+v0.6.0 — Donut
 
-> El sistema despierta… y los animes no se olvidan.
+> Un sistema suave, dulce y caótico… donde nada queda realmente perdido.
 
 ## Mejoras a futuro
 
-- 📈 Sistema de estadísticas más avanzado
 - 🔔 Notificaciones de nuevos capítulos
 - 🌐 Base de datos en lugar de JSON
 - 🧪 Tests automatizados
+- 🏆 Más logros personalizados
+- ???
 
 ---
 
 ## Nota final
-Le he dedicado casi la mayor parte de mi tiempo libre a este bot.
-La verad no sé qué he hecho con mi carrera a estas alturas.
+He invertido una cantidad de tiempo irracional al desarrollo de este proyecto, pero continúo porque me siento orgulloso de lo que he creado.
