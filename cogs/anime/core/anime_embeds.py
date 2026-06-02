@@ -79,6 +79,7 @@ def crear_embed_alias(key, agregados):
 def crear_embed_progreso(key, ordenados):
     embed = discord.Embed(
         title=f"⏳ Progreso: {key}",
+        description="Ranking de avance por usuario",
         color=0x00ffcc
     )
 

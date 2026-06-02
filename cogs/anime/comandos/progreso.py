@@ -36,7 +36,12 @@ class Progreso(commands.Cog):
 
         resultado.append((uid, cap))
 
+        info = server_data[key]
+
         embed = crear_embed_progreso(key, resultado)
+
+        if info.get("image"):
+            embed.set_thumbnail(url=info["image"])
 
         await ctx.send(embed=embed)
 
