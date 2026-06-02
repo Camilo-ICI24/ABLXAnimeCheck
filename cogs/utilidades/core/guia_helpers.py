@@ -97,6 +97,22 @@ def obtener_guias():
         "• Incluye descripción y fecha de obtención."
         "• Si el usuario no es especificado, muestra tus propios logros.",
 
+        "dropear":
+        "*Sintaxis:* $dropear Nombre\n"
+        "→ Marca el anime como abandonado para ti.\n"
+        "• Añade un ❌ junto a tu progreso en $lista.\n",
+
+        "dropeados":
+        "*Sintaxis:* $dropeados\n"
+        "→ Muestra todos los animes que has abandonado.\n"
+        "• Lista los animes con el estado de dropeado.",
+
+        "desdropear":
+        "*Sintaxis:* $desdropear Nombre\n"
+        "→ Elimina el estado de abandonado para un anime.\n"
+        "• Quita el ❌ junto a tu progreso en $lista.\n"
+        "• Permite volver a avanzar en el anime si lo deseas.",
+
         "secreto":
         "???"
     }
