@@ -201,3 +201,16 @@ def crear_embed_drop(usuario, anime):
     embed.set_thumbnail(url=usuario.display_avatar.url)
 
     return embed
+
+def crear_embed_desdropeado(ctx, key):
+    embed = discord.Embed(
+            title="🔄 Anime retomado",
+            description=f"Has desdropeado **{key}** y puedes volver a avanzar.",
+            color=0x2ecc71  # verde
+        )
+
+    embed.set_thumbnail(url=ctx.author.avatar.url)
+
+    embed.set_footer(text=f"Usuario: {ctx.author.name}")
+
+    return embed
