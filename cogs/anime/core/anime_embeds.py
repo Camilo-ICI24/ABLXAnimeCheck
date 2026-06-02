@@ -1,3 +1,4 @@
+from cogs.anime.core.anime_dropeados import usuario_dropeo_anime
 import discord
 
 def crear_embed_startanime(nombre, sugerido, usuarios, status, episodes, imagen):
@@ -78,19 +79,25 @@ def crear_embed_alias(key, agregados):
 def crear_embed_progreso(key, ordenados):
     embed = discord.Embed(
         title=f"⏳ Progreso: {key}",
-        description="Ranking de avance por usuario",
         color=0x00ffcc
     )
 
     texto = []
+    total = len(ordenados)
 
-    for i, (uid, cap) in enumerate(ordenados, start=1):
-        linea = f"**{i}.** <@{uid}> → Cap {cap}"
+    for i, (uid, cap) in enumerate(ordenados):
 
-        if i == 1:
-            linea += " 🔥"
-        elif i == len(ordenados):
-            linea += " 🐢"
+        linea = f"👤 <@{uid}> - Cap {cap}"
+
+        # ❌ DROPEADO TIENE PRIORIDAD MÁXIMA
+        if usuario_dropeo_anime(uid, key):
+            linea += " ❌"
+
+        else:
+            if i == 0:
+                linea += " 🔥"
+            elif i == total - 1:
+                linea += " 🐢"
 
         texto.append(linea)
 

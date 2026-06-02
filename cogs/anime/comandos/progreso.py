@@ -1,8 +1,7 @@
-from discord.ext import commands
-
 from ..core.anime_repository import get_data, get_key
 from ..core.anime_progreso import ordenar_por_progreso
 from ..core.anime_embeds import crear_embed_progreso
+from discord.ext import commands
 
 
 class Progreso(commands.Cog):
@@ -15,7 +14,6 @@ class Progreso(commands.Cog):
     # =========================
     @commands.command()
     async def progreso(self, ctx, *, nombre):
-
         data, server_data = get_data(ctx)
 
         key = get_key(server_data, nombre)
@@ -30,10 +28,17 @@ class Progreso(commands.Cog):
 
         ordenados = ordenar_por_progreso(usuarios)
 
-        embed = crear_embed_progreso(key, ordenados)
+        resultado = []
+
+        for uid, _ in ordenados:
+            data_user = usuarios[uid]
+            cap = data_user.get("cap", 1)
+
+        resultado.append((uid, cap))
+
+        embed = crear_embed_progreso(key, resultado)
 
         await ctx.send(embed=embed)
-
 
 async def setup(bot):
     await bot.add_cog(Progreso(bot))
