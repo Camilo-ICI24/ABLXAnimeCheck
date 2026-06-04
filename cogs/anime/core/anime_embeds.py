@@ -144,7 +144,22 @@ def crear_embed_actualizado(ctx, anime, cambios):
                 inline=False
             )
 
-    embed.set_thumbnail(url=cambios.get("image") if isinstance(cambios, dict) else None)
+    # Buscar imagen del anime para miniatura
+    imagen_anime = None
+    if isinstance(cambios, dict) and cambios.get("image"):
+        imagen_anime = cambios.get("image")
+    elif hasattr(ctx, 'server_data') and anime in ctx.server_data and ctx.server_data[anime].get('image'):
+        imagen_anime = ctx.server_data[anime]['image']
+    # Fallback si en este entorno server_data no está
+    elif hasattr(ctx, 'guild') and hasattr(ctx.guild, 'id'):
+        from db import cargar, get_server_data
+        data = cargar()
+        server_data = get_server_data(data, str(ctx.guild.id))
+        if anime in server_data and server_data[anime].get('image'):
+            imagen_anime = server_data[anime]['image']
+
+    if imagen_anime:
+        embed.set_thumbnail(url=imagen_anime)
     embed.set_footer(text=f"Solicitado por {ctx.author.name}")
 
     return embed
@@ -155,7 +170,8 @@ def crear_embed_sin_cambios(ctx, anime):
         description=f"**{anime}** ya está actualizado con la API.",
         color=discord.Color.gold()
     )
-
+    # Imagen de quien ejecutó el comando
+    embed.set_thumbnail(url=ctx.author.display_avatar.url)
     embed.set_footer(text=f"Solicitado por {ctx.author.name}")
 
     return embed

@@ -19,15 +19,22 @@ async def ejecutar_actualizar(ctx, nombre):
 
     key = get_key(server_data, nombre)
 
+    # --- DEBUG RESOLUCIÓN DE NOMBRE/ALIAS ---
     if not key:
-        return await ctx.send("❌ No existe ese anime")
+        print(f"DEBUG: El input '[{nombre}]' no corresponde ni a nombre principal ni a alias, abortando actualización.")
+        return await ctx.send("❌ No existe ese anime ni ningún alias registrado")
+    if nombre == key:
+        print(f"DEBUG: Se ejecutó la actualización directa sobre el anime '[{nombre}]' (entrada coincide con el nombre principal).")
+    else:
+        print(f"DEBUG: El input '[{nombre}]' no es nombre principal, pero se asocia como alias del anime '[{key}]'. Actualizando este anime.")
 
     info = server_data[key]
 
     # =========================
     # 🔍 API
     # =========================
-    api_data = buscar_anime_jikan(nombre)
+    # Siempre hacer consulta por el nombre principal (key), no por el input del usuario
+    api_data = buscar_anime_jikan(key)
 
     if not api_data:
         return await ctx.send("❌ No se pudo obtener información de la API")
