@@ -94,7 +94,10 @@ distintas acciones realizadas por los usuarios:
 Los logros se almacenan por servidor y usuario. También es posible modificar, crear y eliminar logros directamente desde el JSON asignado, con el objetivo de entregar una experiencia más única y personalidada para el servidor.
 
 ## Estructura del proyecto
+Nota: el código principal vive en la carpeta `main/` (diseñado para cargarse como paquete). A continuación se muestra una vista simplificada de la estructura relevante:
+
 ```bash
+main/
 ├── cogs
 │   ├── anime
 │   │   ├── anime.py
@@ -212,7 +215,19 @@ Los logros se almacenan por servidor y usuario. También es posible modificar, c
 ├── tokendiscord.txt
 └── tokengithub.txt
 
+tests/
+├── test_normalizacion.py
+├── test_anime_search.py
+├── test_dropeados_service.py
+├── test_anime_dropeados.py
+├── test_edges_anime_search.py
+└── test_edges_dropeados.py
+
+tools/
+└── run_pytests.py    # runner ligero (sin pytest) para ejecutar los tests localmente
+
 ```
+
 ---
 
 ## Requisitos
@@ -254,6 +269,11 @@ Crea un archivo -env o configúralo dentro del código
 DISCORD_TOKEN=token_personal_de_discord
 ```
 
+### 5. Ejecutar archivo principal
+Dentro del directorio raíz del proyecto, ejecuta
+```bash
+python main/main.py
+```
 ---
 
 ### Ejecución con Docker
@@ -273,13 +293,54 @@ docker compose logs -f
 ```
 ---
 
+## 🧪 Ejecutar tests
+
+Hay dos formas de ejecutar las pruebas unitarias:
+
+- Opción recomendada (pytest):
+
+  1. Instala pytest (preferible dentro de un virtualenv):
+
+     ```bash
+     pip install -r requirements.txt   # si incluyes pytest en requirements
+     # o solo pytest
+     pip install pytest
+     ```
+
+  2. Ejecuta todos los tests:
+
+     ```bash
+     pytest -q
+     ```
+
+  3. Ejecuta un test concreto:
+
+     ```bash
+     pytest tests/test_anime_search.py -q
+     ```
+
+- Opción alternativa (runner ligero, no requiere pytest):
+
+  - Ejecuta el runner incluido que descubre y ejecuta los tests de forma simple:
+
+    ```bash
+    python tools/run_pytests.py
+    ```
+
+Notas:
+
+- Los tests usan archivos temporales para no modificar tu data real (data/).
+- Se recomienda ejecutar los tests dentro de un entorno virtual para evitar ensuciar la instalación global de Python.
+- Si quieres, puedo añadir un `requirements-dev.txt` con pytest y otras herramientas de desarrollo y un workflow de CI para ejecutar los tests automáticamente en GitHub Actions.
+
+
 ## Estado del proyecto
 
 Versión actual:
 
-v0.6.0 — Donut
+v0.6.1 — Razengan
 
-> Un sistema suave, dulce y caótico… donde nada queda realmente perdido.
+> Un núcleo inestable que nunca deja de evolucionar
 
 ## Mejoras a futuro
 
