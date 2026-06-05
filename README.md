@@ -313,11 +313,9 @@ Hay dos formas de ejecutar las pruebas unitarias:
 
 Versión actual:
 
-v0.6.0 — Donut
-v0.6.0 — Donut
+v0.6.1 - Razengan
 
-> Un sistema suave, dulce y caótico… donde nada queda realmente perdido.
-> Un sistema suave, dulce y caótico… donde nada queda realmente perdido.
+> Un núcleo inestable que nunca deja de evolucionar.
 
 ## Mejoras a futuro
 
