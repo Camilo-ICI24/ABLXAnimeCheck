@@ -94,10 +94,7 @@ distintas acciones realizadas por los usuarios:
 Los logros se almacenan por servidor y usuario. También es posible modificar, crear y eliminar logros directamente desde el JSON asignado, con el objetivo de entregar una experiencia más única y personalidada para el servidor.
 
 ## Estructura del proyecto
-Nota: el código principal vive en la carpeta `main/` (diseñado para cargarse como paquete). A continuación se muestra una vista simplificada de la estructura relevante:
-
 ```bash
-main/
 ├── cogs
 │   ├── anime
 │   │   ├── anime.py
@@ -215,19 +212,7 @@ main/
 ├── tokendiscord.txt
 └── tokengithub.txt
 
-tests/
-├── test_normalizacion.py
-├── test_anime_search.py
-├── test_dropeados_service.py
-├── test_anime_dropeados.py
-├── test_edges_anime_search.py
-└── test_edges_dropeados.py
-
-tools/
-└── run_pytests.py    # runner ligero (sin pytest) para ejecutar los tests localmente
-
 ```
-
 ---
 
 ## Requisitos
@@ -269,11 +254,6 @@ Crea un archivo -env o configúralo dentro del código
 DISCORD_TOKEN=token_personal_de_discord
 ```
 
-### 5. Ejecutar archivo principal
-Dentro del directorio raíz del proyecto, ejecuta
-```bash
-python main/main.py
-```
 ---
 
 ### Ejecución con Docker
@@ -333,9 +313,9 @@ Hay dos formas de ejecutar las pruebas unitarias:
 
 Versión actual:
 
-v0.6.1 — Razengan
+v0.6.0 — Donut
 
-> Un núcleo inestable que nunca deja de evolucionar
+> Un sistema suave, dulce y caótico… donde nada queda realmente perdido.
 
 ## Mejoras a futuro
 
