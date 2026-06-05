@@ -327,12 +327,7 @@ Hay dos formas de ejecutar las pruebas unitarias:
     python tools/run_pytests.py
     ```
 
-Notas:
-
-- Los tests usan archivos temporales para no modificar tu data real (data/).
-- Se recomienda ejecutar los tests dentro de un entorno virtual para evitar ensuciar la instalación global de Python.
-- Si quieres, puedo añadir un `requirements-dev.txt` con pytest y otras herramientas de desarrollo y un workflow de CI para ejecutar los tests automáticamente en GitHub Actions.
-
+---
 
 ## Estado del proyecto
 
