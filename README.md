@@ -314,7 +314,9 @@ Hay dos formas de ejecutar las pruebas unitarias:
 Versión actual:
 
 v0.6.0 — Donut
+v0.6.0 — Donut
 
+> Un sistema suave, dulce y caótico… donde nada queda realmente perdido.
 > Un sistema suave, dulce y caótico… donde nada queda realmente perdido.
 
 ## Mejoras a futuro
