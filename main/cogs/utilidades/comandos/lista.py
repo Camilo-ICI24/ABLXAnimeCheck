@@ -23,14 +23,14 @@ class Lista(commands.Cog):
 
         paginas, total_paginas = preparar_paginacion(server_data)
 
-        msg = await enviar_pagina(ctx, paginas, total_paginas, 0)
+        msg = await enviar_pagina(ctx, paginas, total_paginas, 0, server_id=str(ctx.guild.id))
 
         if total_paginas == 1:
             return
 
         await agregar_reacciones(msg)
 
-        await manejar_paginacion(self.bot, ctx, msg, paginas, total_paginas)
+        await manejar_paginacion(self.bot, ctx, msg, paginas, total_paginas, server_id=str(ctx.guild.id))
 
 
 async def setup(bot):

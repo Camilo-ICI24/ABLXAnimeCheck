@@ -8,11 +8,11 @@ def get_data(ctx):
     server_data = get_server_data(data, str(ctx.guild.id))
     return data, server_data
 
-def crear_embed_(server_data):
+def crear_embed_(server_data, server_id=None):
     embed = crear_base_embed_lista()
 
     for nombre, info in sorted(server_data.items()):
-        valor = formatear_anime_lista(info)
+        valor = formatear_anime_lista(nombre, info, server_id=server_id)
         embed.add_field(name=f"🎬 {nombre}", value=valor, inline=False)
 
     return embed
@@ -24,22 +24,30 @@ def crear_base_embed_lista():
         color=0x00ffcc
     )
 
-def formatear_anime_lista(nombre, info):
+def formatear_anime_lista(nombre, info, server_id=None):
+    """Formatea la entrada de un anime para mostrar en la lista.
+
+    server_id: opcional. Si se provee, se realiza la comprobación de dropeado
+    a nivel de servidor; en caso contrario se omite esa marca.
+    """
     cap = info.get("capitulo", 1)
     usuarios = info.get("usuarios", {})
 
     texto = []
 
     for uid, data in usuarios.items():
-
-        cap_user = data.get("cap", 1)
-        visto = data.get("visto", False)
+        # usuarios pueden almacenarse como dicts o directamente como enteros
+        if isinstance(data, dict):
+            cap_user = data.get("cap", 1)
+            visto = data.get("visto", False)
+        else:
+            cap_user = data
+            visto = False
 
         linea = f"👤 <@{uid}> - Cap {cap_user}"
 
-        # 🔥 AQUÍ está la clave REAL
-        # check dropeado within this server only
-        if usuario_dropeo_anime(uid, nombre, server_id=str(ctx.guild.id)):
+        # check dropeado within this server only (server_id required)
+        if server_id and usuario_dropeo_anime(uid, nombre, server_id=str(server_id)):
             linea += " ❌"
         elif visto:
             linea += " ✅"
@@ -52,13 +60,13 @@ def chunk_animes(server_data, size=5):
     items = list(sorted(server_data.items()))
     return [items[i:i + size] for i in range(0, len(items), size)]
 
-def crear_embed_lista_pagina(pagina, total_paginas, animes):
+def crear_embed_lista_pagina(pagina, total_paginas, animes, server_id=None):
     embed = crear_base_embed_lista()
 
     embed.set_footer(text=f"Página {pagina+1}/{total_paginas}")
 
     for nombre, info in animes:
-        valor = formatear_anime_lista(nombre, info)
+        valor = formatear_anime_lista(nombre, info, server_id=server_id)
         embed.add_field(name=f"🎬 {nombre}", value=valor, inline=False)
 
     return embed
@@ -67,8 +75,8 @@ def preparar_paginacion(server_data):
         paginas = chunk_animes(server_data, 5)
         return paginas, len(paginas)
 
-async def enviar_pagina(ctx, paginas, total_paginas, index):
-        embed = crear_embed_lista_pagina(index, total_paginas, paginas[index])
+async def enviar_pagina(ctx, paginas, total_paginas, index, server_id=None):
+        embed = crear_embed_lista_pagina(index, total_paginas, paginas[index], server_id=server_id)
         return await ctx.send(embed=embed)
 
 async def agregar_reacciones(msg):
@@ -89,7 +97,7 @@ def siguiente_pagina(actual, total_paginas, emoji):
         return (actual + 1) % total_paginas
     return (actual - 1) % total_paginas
     
-async def manejar_paginacion(bot, ctx, msg, paginas, total_paginas):
+async def manejar_paginacion(bot, ctx, msg, paginas, total_paginas, server_id=None):
     actual = 0
     check = check_reaccion(ctx, msg)
 
@@ -108,7 +116,8 @@ async def manejar_paginacion(bot, ctx, msg, paginas, total_paginas):
         embed = crear_embed_lista_pagina(
             actual,
             total_paginas,
-            paginas[actual]
+            paginas[actual],
+            server_id=server_id
         )
 
         await msg.edit(embed=embed)
