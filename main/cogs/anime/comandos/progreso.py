@@ -32,9 +32,14 @@ class Progreso(commands.Cog):
 
         for uid, _ in ordenados:
             data_user = usuarios[uid]
-            cap = data_user.get("cap", 1)
 
-        resultado.append((uid, cap))
+            # usuarios pueden almacenarse como dicts o como enteros (cap)
+            if isinstance(data_user, dict):
+                cap = data_user.get("cap", 1)
+            else:
+                cap = data_user
+
+            resultado.append((uid, cap))
 
         info = server_data[key]
 
