@@ -6,6 +6,7 @@ def texto_comandos():
         "🔍 $verinfo Nombre\n"
         "⏩ $avanzar <capitulo> Nombre\n"
         "📋 $lista\n"
+        "🎭 $reacciones @usuario\n"
         "📊 $votar Nombre\n"
         "🏆 $popular\n"
         "✏️ $renombrar \"Nombre actual\" \"Nombre nuevo\"\n"

@@ -37,6 +37,13 @@ def obtener_guias():
         "→ Muestra todos los animes que el servidor actual está reaccionando.\n"
         "• Incluye capítulo actual y usuarios que se encuentren en reacción.",
 
+        "reacciones":
+        "*Sintaxis:* $reacciones @usuario\n"
+        "→ Muestra el progreso de un usuario, un anime por tarjeta, navegable con reacciones.\n"
+        "• Si no se especifica usuario, muestra tu propio progreso.\n"
+        "• Si el usuario no existe en la DB, retorna un embed de error."
+        "• Cada tarjeta muestra el anime, capítulo avanzado y si está visto o dropeado.",
+
         "votar":
         "*Sintaxis:* $votar Nombre\n"
         "→ Crea una votación del anime para todos los miembros del servidor.\n"
