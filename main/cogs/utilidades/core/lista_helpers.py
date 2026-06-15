@@ -1,4 +1,4 @@
-from main.cogs.utilidades.core.progreso_helpers import normalizar_usuarios, formatear_menciones
+from main.cogs.utilidades.core.embeds import crear_embed_lista_anime
 from main.db import cargar, get_server_data
 from main.cogs.anime.core.anime_dropeados import usuario_dropeo_anime
 import discord
@@ -35,6 +35,8 @@ def formatear_anime_lista(nombre, info, server_id=None):
 
     texto = []
 
+    # Recolectar entradas y ordenar por capítulo de forma descendente
+    entradas = []
     for uid, data in usuarios.items():
         # usuarios pueden almacenarse como dicts o directamente como enteros
         if isinstance(data, dict):
@@ -44,6 +46,18 @@ def formatear_anime_lista(nombre, info, server_id=None):
             cap_user = data
             visto = False
 
+        # Normalizar valores para ordenar correctamente (enteros si es posible)
+        try:
+            cap_sort = int(cap_user)
+        except Exception:
+            cap_sort = 0
+
+        entradas.append((cap_sort, uid, cap_user, visto))
+
+    # ordenar por capítulo descendente, y por uid como segundo criterio
+    entradas.sort(key=lambda e: (-e[0], str(e[1])))
+
+    for cap_sort, uid, cap_user, visto in entradas:
         linea = f"👤 <@{uid}> - Cap {cap_user}"
 
         # check dropeado within this server only (server_id required)
@@ -61,18 +75,26 @@ def chunk_animes(server_data, size=5):
     return [items[i:i + size] for i in range(0, len(items), size)]
 
 def crear_embed_lista_pagina(pagina, total_paginas, animes, server_id=None):
-    embed = crear_base_embed_lista()
+    """Crea un embed para una sola página. Cada página contiene un solo anime.
 
-    embed.set_footer(text=f"Página {pagina+1}/{total_paginas}")
+    animes: lista de tuplas [(nombre, info)] — para esta función será de tamaño 1.
+    """
+    # Tomamos el primer (y único) anime de la página
+    nombre, info = animes[0]
 
-    for nombre, info in animes:
-        valor = formatear_anime_lista(nombre, info, server_id=server_id)
-        embed.add_field(name=f"🎬 {nombre}", value=valor, inline=False)
+    # Mostrar primer alias si existe
+    aliases = info.get("aliases", []) or []
+    primer_alias = aliases[0] if len(aliases) > 0 else "-"
 
-    return embed
+    # Reutilizar el formateo de usuarios (incluye capítulo y lista de usuarios)
+    valor = formatear_anime_lista(nombre, info, server_id=server_id)
+
+    # Delegar la creación del embed al módulo de embeds
+    return crear_embed_lista_anime(pagina, total_paginas, nombre, info, primer_alias, valor)
 
 def preparar_paginacion(server_data):
-        paginas = chunk_animes(server_data, 5)
+        # Queremos una página por anime
+        paginas = chunk_animes(server_data, 1)
         return paginas, len(paginas)
 
 async def enviar_pagina(ctx, paginas, total_paginas, index, server_id=None):

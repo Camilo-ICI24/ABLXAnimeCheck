@@ -75,6 +75,7 @@ EXTENSIONES = [
     "main.cogs.utilidades.comandos.ha",
     "main.cogs.utilidades.comandos.ping",
     "main.cogs.utilidades.comandos.lista",
+    "main.cogs.utilidades.comandos.reacciones",
     "main.cogs.utilidades.comandos.relanzar",
     "main.cogs.utilidades.comandos.secreto",
     "main.cogs.utilidades.estadisticas",

@@ -156,14 +156,36 @@ def ejecutar_execv(who: str):
     """Imprime pasos y ejecuta os.execv para reiniciar el proceso actual.
     Nota: puede lanzar SystemExit si execv falla.
     """
-    now = datetime.datetime.now().isoformat()
+    now = datetime.now().isoformat()
     print(f"[RELOAD][PYTHON] Requested by {who} at {now} - shutting down and exec'ing " +
           "(python main/main.py)")
     print(f"[RELOAD][DOCKER] Requested by {who} at {now} - shutting down containerized process (docker)")
     
+    # Intento 1: reusar sys.argv (mantiene las mismas flags)
     try:
+        print(f"[RELOAD][ATTEMPT] execv using sys.argv: {sys.executable} {' '.join(sys.argv)}")
         os.execv(sys.executable, [sys.executable] + sys.argv)
-    
-    except Exception as e:
-        print(f"[RELOAD][ERROR] execv failed: {e}")
-        sys.exit(0)
+
+    except Exception as e1:
+        print(f"[RELOAD][ERROR] execv with sys.argv failed: {e1}")
+
+    # Intento 2: intentar ejecutar como módulo main.main (si el proyecto se lanza como paquete)
+    try:
+        print(f"[RELOAD][ATTEMPT] execv using -m main.main")
+        os.execv(sys.executable, [sys.executable, "-m", "main.main"])
+    except Exception as e2:
+        print(f"[RELOAD][ERROR] execv -m main.main failed: {e2}")
+
+    # Intento 3: buscar explicitamente main/main.py en la jerarquía del archivo y ejecutarlo
+    try:
+        repo_root = Path(__file__).resolve().parents[4]
+        candidate = repo_root / "main" / "main.py"
+        if candidate.exists():
+            print(f"[RELOAD][ATTEMPT] execv using script: {candidate}")
+            os.execv(sys.executable, [sys.executable, str(candidate)])
+    except Exception as e3:
+        print(f"[RELOAD][ERROR] execv using main.py candidate failed: {e3}")
+
+    # Si todo falla, salir con código de error para que el supervisor (docker/systemd) pueda reiniciar
+    print("[RELOAD][ERROR] All execv attempts failed. Exiting process with code 1.")
+    os._exit(1)
