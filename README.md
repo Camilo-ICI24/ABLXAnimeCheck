@@ -39,6 +39,7 @@ Bot de Discord para gestionar animes en comunidad: seguimiento de capítulos, pr
 - 🔍 $verinfo Nombre
 - ⏩ $avanzar <capitulo> Nombre
 - 📋 $lista
+- 🎭 $reacciones @usuario
 - 📊 $votar Nombre
 - 🏆 $popular 
 - 🏷️ $alias "Nombre" "alias1" ... 
@@ -147,6 +148,7 @@ Los logros se almacenan por servidor y usuario. También es posible modificar, c
 │   │   │   ├── infobot.py
 │   │   │   ├── __init__.py
 │   │   │   ├── lista.py
+│   │   │   ├── reacciones.py
 │   │   │   ├── logros.py
 │   │   │   ├── ping.py
 │   │   │   └── secreto.py
@@ -158,6 +160,7 @@ Los logros se almacenan por servidor y usuario. También es posible modificar, c
 │   │   │   ├── guia_helpers.py
 │   │   │   ├── __init__.py
 │   │   │   ├── lista_helpers.py
+│   │   │   ├── reacciones_utils.py
 │   │   │   ├── logros
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── logros_cargar.py
@@ -313,9 +316,27 @@ Hay dos formas de ejecutar las pruebas unitarias:
 
 Versión actual:
 
-v0.6.1 - Razengan
+v0.7.0 - Atelier
 
 > Un núcleo inestable que nunca deja de evolucionar.
+
+### Cambios en v0.6.2
+
+- Añadido comando `$reacciones [@usuario]`:
+  - Muestra el progreso de un usuario un anime por embed (paginación por reacciones ◀️/▶️).
+  - Miniatura del embed: avatar del usuario objetivo.
+  - Imagen grande (debajo del embed): miniatura del anime si está disponible.
+  - Campos mostrados: `Sugerido por` (mención si está registrada), `Capítulo` (global) y la línea del usuario `👤 <@uid> - Cap N` con ✅/❌ según terminado/dropeado.
+  - Color del embed refleja la relación usuario→anime (prioridad: dropeado → rojo, terminado → verde, en emisión → morado).
+  - Comportamiento: si no se especifica usuario muestra el progreso del invocador; si el usuario no existe en la DB devuelve un embed de error rojo con la miniatura del bot.
+
+- Código añadido / modificado:
+  - `main/cogs/utilidades/comandos/reacciones.py` (nuevo cog y comando)
+  - `main/cogs/utilidades/core/reacciones_utils.py` (utilidades para filtrado de animes por usuario)
+  - `main/cogs/utilidades/core/embeds.py` (se añadió `crear_embed_reacciones_usuario`)
+  - `main/cogs/utilidades/core/comandos_texto.py` y `main/cogs/utilidades/core/guia_helpers.py` actualizados para documentar el comando
+
+Recomendaciones de permisos: el bot necesita `Add Reactions` y `Read Message History`; para limpiar reacciones al expirar se requiere `Manage Messages` (opcional).
 
 ## Mejoras a futuro
 

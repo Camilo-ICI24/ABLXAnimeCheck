@@ -37,3 +37,8 @@ def normalizar_usuario_individual(data, cap):
         "cap": data,
         "visto": False
     }
+
+
+# Nota: las utilidades compartidas para el comando reacciones se han movido
+# a main/cogs/utilidades/core/reacciones_utils.py para mantener el código
+# centrado y separado de funciones relacionadas con progreso general.

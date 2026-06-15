@@ -6,6 +6,7 @@ def texto_comandos():
         "🔍 $verinfo Nombre\n"
         "⏩ $avanzar <capitulo> Nombre\n"
         "📋 $lista\n"
+        "🎭 $reacciones @usuario\n"
         "📊 $votar Nombre\n"
         "🏆 $popular\n"
         "✏️ $renombrar \"Nombre actual\" \"Nombre nuevo\"\n"
@@ -18,8 +19,10 @@ def texto_comandos():
         "📤 $dropeados\n"
         "🔄 $desdropear Nombre\n"
         "📦 $infobot\n"
+        "⚙️ $actualizar Nombre\n"
         "🏓 $ping\n"
         "🤫 $secreto\n"
         "🏅 $logros @usuario\n"
+        "♻️ $relanzar\n"
         "💡 Prefijos: $"
     )

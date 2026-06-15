@@ -36,16 +36,14 @@ def agregar_seccion_novedades(embed):
     embed.add_field(
         name="🆕 Novedades",
         value=(
-            "• Comandos para dropear y desdropear animes\n"
-            "• Lista de animes dropeados por el usuario\n"
-            "• Deprecación de comando $visto e integración automática con $avanzar\n"
-            "• Eliminación de comando $end obsoleto\n"
+            "• Nuevo comando $reacciones para obtener lista de reacciones del usuario\n"
+            "• Lista de usuarios ordenada según capítulo en $lista"
         ),
         inline=False
     )
 
 def agregar_seccion_metadata(embed):
-    embed.add_field(name="🧪 Versión", value="v2026-06-02(beta)", inline=True)
+    embed.add_field(name="🧪 Versión", value="v2026-06-15(beta)", inline=True)
     embed.add_field(
         name="📦 Repositorio",
         value="[GitHub](https://github.com/Camilo-ICI24/ABLXAnimeCheck.git)",
@@ -125,3 +123,123 @@ def crear_embed_frase(frase):
         )
 
         return embed
+
+def crear_embed_reinicio_no_autorizado(ctx, desarrollador, tag_desarrollador):
+    embed = discord.Embed(
+        title="Acceso denegado",
+        description="Solo el desarrollador puede ejecutar este comando. Contacta a " + 
+        f"{desarrollador} ({tag_desarrollador}) para más información.",
+        color=0xFF4444
+        )
+            
+    try:
+        if ctx.guild and ctx.guild.icon:
+            miniatura = getattr(ctx.guild.icon, "url", None) or getattr(ctx.guild, "icon_url", None)
+            if miniatura:
+                embed.set_thumbnail(url=miniatura)
+
+    except Exception:
+        pass
+
+    return embed
+
+
+def crear_embed_lista_anime(pagina, total_paginas, nombre, info, primer_alias, descripcion):
+    """Crea el embed para un anime individual usado por el comando $lista.
+
+    Mantiene la miniatura si info contiene 'image'.
+    """
+    embed = discord.Embed(
+        title=f"🎬 {nombre}",
+        description=f"🏷️ Alias: {primer_alias}\n\n{descripcion}",
+        color=0x00ffcc
+    )
+
+    embed.set_footer(text=f"Página {pagina+1}/{total_paginas}")
+
+    imagen = info.get("image")
+    if imagen:
+        try:
+            embed.set_thumbnail(url=imagen)
+        except Exception:
+            pass
+
+    return embed
+
+
+def crear_embed_reacciones_usuario(pagina, total_paginas, nombre, info, uid, cap_user, visto, 
+                                   dropeado, avatar_url):
+    COLOR_MORADO = 0x8e44ad
+    COLOR_VERDE = 0x2ecc71
+    COLOR_ROJO = 0xFF4444
+
+    terminado = False
+    try:
+        episodes = info.get("episodes")
+        if episodes is not None and cap_user is not None:
+            try:
+                if int(cap_user) >= int(episodes):
+                    terminado = True
+
+            except Exception:
+                pass
+
+        status = (info.get("status") or "").lower()
+        if status in ("finished", "completed"):
+            terminado = True
+
+    except Exception:
+        terminado = terminado
+
+    if dropeado:
+        color = COLOR_ROJO
+
+    elif visto or terminado:
+        color = COLOR_VERDE
+
+    else:
+        color = COLOR_MORADO
+
+    embed = discord.Embed(title=f"{nombre}", color=color)
+
+    if avatar_url:
+        try:
+            embed.set_thumbnail(url=avatar_url)
+        except Exception:
+            pass
+
+    sugerido_raw = info.get("sugerido_por") or "-"
+    if sugerido_raw and sugerido_raw != "-":
+        try:
+            sugerido = f"<@{sugerido_raw}>"
+
+        except Exception:
+            sugerido = str(sugerido_raw)
+
+    else:
+        sugerido = "-"
+
+    cap_global = info.get("capitulo", info.get("cap", 1))
+
+    embed.add_field(name="Sugerido por", value=sugerido, inline=True)
+    embed.add_field(name="Capítulo", value=str(cap_global), inline=True)
+
+    linea_usuario = f"👤 <@{uid}> - Cap {cap_user}"
+    if dropeado:
+        linea_usuario += " ❌"
+
+    elif visto or terminado:
+        linea_usuario += " ✅"
+
+    embed.add_field(name="Usuario", value=linea_usuario, inline=False)
+
+    imagen = info.get("image")
+    if imagen:
+        try:
+            embed.set_image(url=imagen)
+
+        except Exception:
+            pass
+
+    embed.set_footer(text=f"Página {pagina+1}/{total_paginas}")
+    return embed
