@@ -1,5 +1,6 @@
 from discord.ext import commands
 from pathlib import Path
+import json
 import discord
 import sys
 import traceback
@@ -74,6 +75,7 @@ EXTENSIONES = [
     "main.cogs.utilidades.comandos.ha",
     "main.cogs.utilidades.comandos.ping",
     "main.cogs.utilidades.comandos.lista",
+    "main.cogs.utilidades.comandos.relanzar",
     "main.cogs.utilidades.comandos.secreto",
     "main.cogs.utilidades.estadisticas",
 
@@ -96,6 +98,33 @@ EXTENSIONES = [
 @bot.event
 async def on_ready():
     print(f"Conectado como {bot.user} | bot_id={id(bot)} | extensiones_cargadas={len(bot.extensions)}")
+    # If a reload notice file exists, announce back in the channel that requested the reload
+    try:
+        repo_root = Path(__file__).resolve().parent.parent
+        notice_file = repo_root / ".reload_notice.json"
+        if notice_file.exists():
+            try:
+                data = json.loads(notice_file.read_text(encoding="utf-8"))
+                ch_id = data.get("channel_id")
+                reason = data.get("reason", "Reload completed")
+                requester = data.get("requester")
+                # attempt to fetch channel
+                if ch_id:
+                    channel = bot.get_channel(int(ch_id)) or await bot.fetch_channel(int(ch_id))
+                    # build green embed (bot operational)
+                    emb = discord.Embed(title="Bot operativo", description=f"El bot ha vuelto a arrancar.\nMotivo: {reason}", color=discord.Color.green())
+                    emb.set_footer(text=f"Solicitado por {requester}")
+                    await channel.send(embed=emb)
+                else:
+                    print("[ON_READY] reload notice present but no channel_id found")
+            except Exception as e:
+                print(f"[ON_READY] Failed to process reload notice: {e}")
+            try:
+                notice_file.unlink()
+            except Exception:
+                pass
+    except Exception:
+        pass
 
 # =========================
 # 🚨 ERRORES

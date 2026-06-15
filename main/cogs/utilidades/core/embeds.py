@@ -125,3 +125,22 @@ def crear_embed_frase(frase):
         )
 
         return embed
+
+def crear_embed_reinicio_no_autorizado(ctx, desarrollador, tag_desarrollador):
+    embed = discord.Embed(
+        title="Acceso denegado",
+        description="Solo el desarrollador puede ejecutar este comando. Contacta a " + 
+        f"{desarrollador} ({tag_desarrollador}) para más información.",
+        color=0xFF4444
+        )
+            
+    try:
+        if ctx.guild and ctx.guild.icon:
+            miniatura = getattr(ctx.guild.icon, "url", None) or getattr(ctx.guild, "icon_url", None)
+            if miniatura:
+                embed.set_thumbnail(url=miniatura)
+
+    except Exception:
+        pass
+
+    return embed

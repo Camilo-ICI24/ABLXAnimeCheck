@@ -18,8 +18,10 @@ def texto_comandos():
         "📤 $dropeados\n"
         "🔄 $desdropear Nombre\n"
         "📦 $infobot\n"
+        "⚙️ $actualizar Nombre\n"
         "🏓 $ping\n"
         "🤫 $secreto\n"
         "🏅 $logros @usuario\n"
+        "♻️ $relanzar\n"
         "💡 Prefijos: $"
     )

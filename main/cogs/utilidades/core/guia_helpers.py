@@ -85,7 +85,8 @@ def obtener_guias():
         "→ Marca el anime como terminado para ti.\n"
         "• Añade un ✅ junto a tu progreso en $lista.\n"
         "• No afecta a otros usuarios.\n"
-        "• Puedes seguir avanzando luego si el anime continúa.",
+        "• Puedes seguir avanzando luego si el anime continúa.\n"
+        "⚠️ *Deprecado:* El comando $visto está deprecado y puede eliminarse en futuras versiones.\n",
 
         "ping":
         "*Sintaxis:* $ping\n"
@@ -96,6 +97,12 @@ def obtener_guias():
         "→ Muestra los logros obtenidos por un usuario.\n"
         "• Incluye descripción y fecha de obtención."
         "• Si el usuario no es especificado, muestra tus propios logros.",
+
+        "actualizar":
+        "*Sintaxis:* $actualizar \"Nombre\" \"Nuevo nombre\"\n"
+        "→ Cambia el nombre de un anime registrado.\n"
+        "• Mantiene el progreso, votos y usuarios asociados al anime.\n"
+        "• Útil para corregir errores o actualizar a un nombre más común.",
 
         "dropear":
         "*Sintaxis:* $dropear Nombre\n"
@@ -112,6 +119,11 @@ def obtener_guias():
         "→ Elimina el estado de abandonado para un anime.\n"
         "• Quita el ❌ junto a tu progreso en $lista.\n"
         "• Permite volver a avanzar en el anime si lo deseas.",
+
+        "⚠️ relanzar":
+        "*Sintaxis:* $relanzar\n"
+        "→ Reinicia el bot de forma segura, guardando estado previo y cargando funcionalidades nuevas\n"
+        "• Solo usuarios autorizados pueden usarlo\n",
 
         "secreto":
         "???"
