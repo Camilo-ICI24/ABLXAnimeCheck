@@ -1,6 +1,10 @@
+from datetime import datetime
 from pathlib import Path
+import asyncio
+import discord
 import json
 import os
+import sys
 import unicodedata as ucd
 
 
@@ -79,9 +83,8 @@ def normalizar_token(token: str) -> str:
     if not token:
         return ""
     t = token.strip().lower()
-    # normalizar acentos
-    try:
 
+    try:
         t = ucd.normalize("NFKD", t)
         t = "".join(ch for ch in t if not ucd.combining(ch))
 
@@ -97,11 +100,10 @@ def escribir_aviso_reinicio(raiz_repo: Path, aviso: dict, filename: str = ".relo
         target = raiz_repo / filename
         tmp = raiz_repo / (filename + ".tmp")
         tmp.write_text(json.dumps(aviso), encoding="utf-8")
-        # atomic replace
         os.replace(str(tmp), str(target))
         return target
+    
     except Exception:
-        # fall back: try direct write
         try:
             target.write_text(json.dumps(aviso), encoding="utf-8")
             return target
@@ -113,12 +115,6 @@ def es_usuario_autorizado(ctx, ids_autorizados) -> bool:
         return bool(ctx.author and getattr(ctx.author, "id", None) in ids_autorizados)
     except Exception:
         return False
-
-
-import discord
-import asyncio
-import sys
-
 
 def crear_embed_denegado(owner_mention: str = None, owner_tag: str = None, guild_icon_url: str = None) -> discord.Embed:
     """Devuelve un embed rojo para acceso denegado con contacto opcional."""
@@ -135,8 +131,10 @@ def crear_embed_denegado(owner_mention: str = None, owner_tag: str = None, guild
 
 
 async def pedir_confirmacion(bot, ctx, timeout: int, affirmative: set, negative: set) -> str:
-    """Envía un prompt y espera respuesta S/N. Devuelve 'AFFIRMATIVE', 'NEGATIVE', 'UNKNOWN' o None si timeout."""
-    await ctx.send(f"⚠️ {ctx.author.mention}, ¿confirmas relanzar el bot? Responde `S` para confirmar o `N` para cancelar. Tienes {timeout}s.")
+    """Envía un prompt y espera respuesta S/N. Devuelve 'AFFIRMATIVE', 'NEGATIVE', 'UNKNOWN' o None 
+    si timeout."""
+    await ctx.send(f"⚠️ {ctx.author.mention}, ¿confirmas relanzar el bot? Responde `S` para confirmar " +
+                   "o `N` para cancelar. Tienes {timeout}s.")
 
     def _check(msg):
         return msg.author.id == ctx.author.id and msg.channel.id == ctx.channel.id and bool(msg.content)
@@ -158,11 +156,14 @@ def ejecutar_execv(who: str):
     """Imprime pasos y ejecuta os.execv para reiniciar el proceso actual.
     Nota: puede lanzar SystemExit si execv falla.
     """
-    now = __import__("datetime").datetime.now().isoformat()
-    print(f"[RELOAD][PYTHON] Requested by {who} at {now} - shutting down and exec'ing (python main/main.py)")
+    now = datetime.datetime.now().isoformat()
+    print(f"[RELOAD][PYTHON] Requested by {who} at {now} - shutting down and exec'ing " +
+          "(python main/main.py)")
     print(f"[RELOAD][DOCKER] Requested by {who} at {now} - shutting down containerized process (docker)")
+    
     try:
         os.execv(sys.executable, [sys.executable] + sys.argv)
+    
     except Exception as e:
         print(f"[RELOAD][ERROR] execv failed: {e}")
         sys.exit(0)
