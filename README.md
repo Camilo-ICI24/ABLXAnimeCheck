@@ -318,7 +318,7 @@ Versión actual:
 
 v0.7.0 - Atelier
 
-> Un núcleo inestable que nunca deja de evolucionar.
+> El taller donde ocurre la magia de los animes y sus reacciones.
 
 ### Cambios en v0.6.2
 
